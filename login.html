@@ -71,7 +71,7 @@ input:focus,select:focus{outline:none;border-color:var(--azul-medio)}
     <a class="btn" href="index.html" style="display:block;text-align:center;text-decoration:none">Ir para o jogo (modo local)</a>
   </div>
 
-  <div id="authView" class="hidden">
+  <div id="authView">
     <div class="eyebrow">ENEDES · Pesquisa de mercado imobiliário</div>
     <h1>Cidade em Construção</h1>
     <p class="sub">Entre para participar. Seus dados são tratados de forma anônima para fins de pesquisa (LGPD).</p>
@@ -85,6 +85,7 @@ input:focus,select:focus{outline:none;border-color:var(--azul-medio)}
     <input type="password" id="password" autocomplete="current-password" placeholder="mínimo 6 caracteres" />
     <button class="btn" id="btnAuth">Entrar</button>
     <button class="btn ghost" id="btnGuest">Entrar como convidado (anônimo)</button>
+    <button class="btn ghost" id="btnPlayLocal">▶ Jogar agora (modo local, sem conta)</button>
     <button class="link" id="btnReset">Esqueci minha senha</button>
     <div class="msg" id="authMsg"></div>
   </div>
@@ -130,13 +131,17 @@ input:focus,select:focus{outline:none;border-color:var(--azul-medio)}
   document.getElementById('logo').innerHTML =
     '<svg width="132" height="30" viewBox="0 0 150 34" aria-label="ENEDES"><rect x="0" y="4" width="9" height="26" rx="2" fill="#1A6B3C"/><rect x="11" y="10" width="9" height="20" rx="2" fill="#2E75B6"/><rect x="22" y="0" width="9" height="30" rx="2" fill="#E8DCC0"/><text x="40" y="20" font-family="Space Grotesk,sans-serif" font-size="17" font-weight="700" fill="#EAF1F8">ENEDES</text></svg><span class="logo-tag">logo provisória</span>';
   document.getElementById('authView').classList.remove('hidden');
+  document.getElementById('btnPlayLocal').onclick = function(){ location.href='index.html?jogar=1'; };
 </script>
 
 <script type="module">
-import { createClient } from './supabase.esm.js';
 const cfg = window.SUPABASE_CONFIG || {};
 const configured = cfg.url && !cfg.url.includes('SEU-PROJETO') && cfg.anonKey && !cfg.anonKey.includes('SUA-ANON');
-const supabase = configured ? createClient(cfg.url, cfg.anonKey) : null;
+let supabase = null;
+if(configured){
+  try { const { createClient } = await import('./supabase.esm.js'); supabase = createClient(cfg.url, cfg.anonKey); }
+  catch(e){ console.warn('Supabase não carregou.', e); }
+}
 
 const $ = id => document.getElementById(id);
 const show = v => { ['notConfigured','authView','profileView'].forEach(x=>$(x).classList.add('hidden')); $(v).classList.remove('hidden'); };
@@ -153,9 +158,9 @@ async function getSession(){ const { data } = await supabase.auth.getSession(); 
 async function getProfile(uid){ const { data } = await supabase.from('perfil').select('*').eq('user_id',uid).maybeSingle(); return data; }
 
 async function route(){
-  if(!configured){
+  if(!supabase){
     show('authView');
-    msg($('authMsg'), 'Prévia do login. Conecte o Supabase (edite SUPABASE_CONFIG neste arquivo e no index.html) para o login funcionar de verdade.', true);
+    msg($('authMsg'), 'Prévia do login. Conecte o Supabase (edite SUPABASE_CONFIG neste arquivo e no index.html) para o login funcionar. Para jogar agora, use "Jogar agora (modo local)".', true);
     return;
   }
   const session = await getSession();
@@ -165,7 +170,7 @@ async function route(){
   show('profileView');
   $('whoami').textContent = 'Conectado como ' + (session.user.email || 'convidado anônimo');
 }
-function requireConfig(){ if(!configured){ msg($('authMsg'),'Conecte o Supabase primeiro (edite SUPABASE_CONFIG no topo do arquivo).'); return false; } return true; }
+function requireConfig(){ if(!supabase){ msg($('authMsg'),'Conecte o Supabase primeiro (edite SUPABASE_CONFIG no topo do arquivo).'); return false; } return true; }
 
 $('tabLogin').onclick=()=>{ mode='login'; $('tabLogin').classList.add('on'); $('tabSignup').classList.remove('on'); $('btnAuth').textContent='Entrar'; };
 $('tabSignup').onclick=()=>{ mode='signup'; $('tabSignup').classList.add('on'); $('tabLogin').classList.remove('on'); $('btnAuth').textContent='Criar conta'; };
@@ -194,6 +199,7 @@ $('btnGuest').onclick = async ()=>{
   }catch(e){ msg($('authMsg'), e.message); }
   $('btnGuest').disabled=false;
 };
+$('btnPlayLocal').onclick = ()=> location.href = 'index.html?jogar=1';
 $('btnReset').onclick = async ()=>{
   const email=$('email').value.trim(); if(!email){ msg($('authMsg'),'Digite seu e-mail para redefinir a senha.'); return; }
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: new URL('login.html', location.href).href });
