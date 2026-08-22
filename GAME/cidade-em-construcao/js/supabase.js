@@ -28,7 +28,7 @@ export function signInAnon(){
   return supabase.auth.signInAnonymously();
 }
 export function resetPassword(email){
-  return supabase.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/login.html' });
+  return supabase.auth.resetPasswordForEmail(email, { redirectTo: new URL('login.html', location.href).href });
 }
 export function signOut(){
   return supabase.auth.signOut();
@@ -44,6 +44,33 @@ export function saveProfile(uid, fields){
   return supabase.from('perfil').upsert({
     user_id: uid, ...fields, atualizado_em: new Date().toISOString()
   });
+}
+
+export function touchProfile(uid, fields = {}){
+  return supabase.from('perfil').update({
+    ...fields,
+    ultima_atividade_em: new Date().toISOString(),
+    atualizado_em: new Date().toISOString()
+  }).eq('user_id', uid);
+}
+
+export async function getTeacher(){
+  if(!supabase) return null;
+  const { data:{ session } } = await supabase.auth.getSession();
+  if(!session?.user?.email) return null;
+  const { data, error } = await supabase.from('docentes')
+    .select('email,turma_codigo,nome_exibicao')
+    .eq('email', session.user.email.toLowerCase())
+    .maybeSingle();
+  if(error) throw error;
+  return data;
+}
+
+export async function getClassDashboard(turmaCodigo){
+  if(!supabase) throw new Error('Supabase não configurado.');
+  const { data, error } = await supabase.rpc('dashboard_turma', { p_codigo_turma: turmaCodigo });
+  if(error) throw error;
+  return data;
 }
 
 // ---- Sessão de jogo + eventos ----
