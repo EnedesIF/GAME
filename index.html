@@ -701,19 +701,34 @@ canvas{display:block}
   };
 </script>
 
-<!-- Portão de login + gravação no Supabase (não afeta o modo local) -->
+<!-- Redirecionamento para o login: roda SEM depender do Supabase carregar -->
+<script>
+  (function(){
+    var cfg = window.SUPABASE_CONFIG || {};
+    var configured = cfg.url && cfg.url.indexOf('SEU-PROJETO')<0 && cfg.anonKey && cfg.anonKey.indexOf('SUA-ANON')<0;
+    var jogar = new URLSearchParams(location.search).has('jogar');
+    window.__configured = configured;
+    // Sem Supabase e sem ?jogar → abre a página de login primeiro.
+    if(!configured && !jogar){ location.replace('login.html'); }
+  })();
+</script>
+
+<!-- Autenticação/gravação no Supabase: só quando configurado (import dinâmico) -->
 <script type="module">
-import { createClient } from './supabase.esm.js';
 (async () => {
-  const cfg = window.SUPABASE_CONFIG || {};
-  const configured = cfg.url && !cfg.url.includes('SEU-PROJETO') && cfg.anonKey && !cfg.anonKey.includes('SUA-ANON');
-  if(!configured){ console.info('[Cidade] Supabase não configurado — modo local/demo.'); return; }
+  if(!window.__configured) return;   // modo local (?jogar): nada a fazer aqui
+  let createClient;
+  try { ({ createClient } = await import('./supabase.esm.js')); }
+  catch(e){ console.warn('Supabase não carregou — seguindo em modo local.', e); return; }
+  const cfg = window.SUPABASE_CONFIG;
   const supabase = createClient(cfg.url, cfg.anonKey);
-  const { data:{ session } } = await supabase.auth.getSession();
+  let session=null;
+  try { const r = await supabase.auth.getSession(); session = r.data.session; }
+  catch(e){ console.warn('Supabase inacessível.', e); return; }
   if(!session){ location.replace('login.html'); return; }
   let profile = null;
   try { const r = await supabase.from('perfil').select('*').eq('user_id', session.user.id).maybeSingle(); profile = r.data; } catch(_){}
-  if(!profile){ location.replace('login.html'); return; }   // completa o perfil antes de jogar
+  if(!profile){ location.replace('login.html'); return; }
   window.__authed = true;
   window.__saveSession = async (resumo, eventos) => { try {
     const uid = session.user.id;
