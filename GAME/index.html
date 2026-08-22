@@ -12,8 +12,8 @@
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    "three": "./three.module.js",
+    "three/addons/": "./addons/"
   }
 }
 </script>
@@ -428,6 +428,7 @@ canvas{display:block}
     <div class="row">
       <button class="btn primary" id="btnStart">Começar experiência</button>
       <button class="btn ghost" id="btnExplore">Explorar projetos / Painel de insights</button>
+      <button class="btn ghost" id="btnLoginPage">Entrar / criar conta</button>
     </div>
     <p class="note">MVP demonstrativo · Estética voxel autoral · Sem uso de personagens, texturas, marcas ou elementos proprietários de terceiros.</p>
   </div>
@@ -702,7 +703,7 @@ canvas{display:block}
 
 <!-- Portão de login + gravação no Supabase (não afeta o modo local) -->
 <script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from './supabase.esm.js';
 (async () => {
   const cfg = window.SUPABASE_CONFIG || {};
   const configured = cfg.url && !cfg.url.includes('SEU-PROJETO') && cfg.anonKey && !cfg.anonKey.includes('SUA-ANON');
@@ -731,7 +732,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 <script type="module">
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OrbitControls } from './OrbitControls.js';
 
 /* =========================================================
    0. LOGO ENEDES — ESPAÇO RESERVADO (placeholder)
@@ -1579,6 +1580,7 @@ document.getElementById('btnStart').addEventListener('click',()=>{
   buildRoleScreen(); show('role');
 });
 document.getElementById('btnExplore').addEventListener('click',()=>{ renderDashboard(); show('dash'); });
+document.getElementById('btnLoginPage').addEventListener('click',()=>{ location.href='login.html'; });
 
 // voltar genérico
 document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.goto)));

@@ -125,8 +125,15 @@ input:focus,select:focus{outline:none;border-color:var(--azul-medio)}
   <p class="note" id="whoami"></p>
 </div>
 
+<script>
+  // Pré-renderização (roda sempre): garante que o formulário apareça mesmo se o módulo falhar.
+  document.getElementById('logo').innerHTML =
+    '<svg width="132" height="30" viewBox="0 0 150 34" aria-label="ENEDES"><rect x="0" y="4" width="9" height="26" rx="2" fill="#1A6B3C"/><rect x="11" y="10" width="9" height="20" rx="2" fill="#2E75B6"/><rect x="22" y="0" width="9" height="30" rx="2" fill="#E8DCC0"/><text x="40" y="20" font-family="Space Grotesk,sans-serif" font-size="17" font-weight="700" fill="#EAF1F8">ENEDES</text></svg><span class="logo-tag">logo provisória</span>';
+  document.getElementById('authView').classList.remove('hidden');
+</script>
+
 <script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from './supabase.esm.js';
 const cfg = window.SUPABASE_CONFIG || {};
 const configured = cfg.url && !cfg.url.includes('SEU-PROJETO') && cfg.anonKey && !cfg.anonKey.includes('SUA-ANON');
 const supabase = configured ? createClient(cfg.url, cfg.anonKey) : null;
@@ -164,6 +171,7 @@ $('tabLogin').onclick=()=>{ mode='login'; $('tabLogin').classList.add('on'); $('
 $('tabSignup').onclick=()=>{ mode='signup'; $('tabSignup').classList.add('on'); $('tabLogin').classList.remove('on'); $('btnAuth').textContent='Criar conta'; };
 
 $('btnAuth').onclick = async ()=>{
+  if(!requireConfig()) return;
   const email=$('email').value.trim(), password=$('password').value;
   if(!email || password.length<6){ msg($('authMsg'),'Informe e-mail válido e senha de 6+ caracteres.'); return; }
   $('btnAuth').disabled=true;
@@ -178,6 +186,7 @@ $('btnAuth').onclick = async ()=>{
   $('btnAuth').disabled=false;
 };
 $('btnGuest').onclick = async ()=>{
+  if(!requireConfig()) return;
   $('btnGuest').disabled=true;
   try{ const { error } = await supabase.auth.signInAnonymously();
     if(error) msg($('authMsg'),'Login anônimo indisponível (habilite em Authentication → Providers). '+error.message);
