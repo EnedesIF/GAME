@@ -291,6 +291,23 @@ canvas{display:block}
 .peer .react{margin-top:8px;display:flex;gap:6px}
 .peer .react button{font-size:12px;padding:4px 9px;border-radius:8px;border:1px solid var(--borda);background:transparent;color:var(--texto-sec);cursor:pointer}
 .peer .react button:hover{border-color:var(--verde-claro);color:var(--verde-claro)}
+
+/* ---------- card de leitura de ativo (FIIs) ---------- */
+#assetInfo{position:absolute;right:16px;bottom:86px;z-index:12;pointer-events:none;display:flex;flex-direction:column;gap:10px;max-width:330px}
+.asset{pointer-events:auto;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,194,75,.4);background:var(--glass);backdrop-filter:blur(14px);box-shadow:var(--sombra);animation:peerIn .3s ease}
+.asset.out{animation:peerOut .3s ease forwards}
+.asset .ah{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.asset .ah b{font-family:'Space Grotesk',sans-serif;font-size:14px}
+.asset .ah .x{background:none;border:none;color:var(--texto-sec);cursor:pointer;font-size:16px;line-height:1}
+.asset .atag{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ambar)}
+.asset p{font-size:12.5px;line-height:1.45;color:var(--texto);margin-bottom:8px}
+.asset .ind{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.asset .ind .r{display:grid;grid-template-columns:74px 1fr;align-items:center;gap:8px;font-size:11px;color:var(--texto-sec)}
+.asset .dots{display:flex;gap:3px}
+.asset .dots i{width:12px;height:8px;border-radius:2px;background:rgba(255,255,255,.12)}
+.asset .dots i.on{background:linear-gradient(90deg,var(--azul-medio),var(--verde-claro))}
+.asset .fii{font-size:11.5px;color:var(--verde-claro);background:rgba(47,158,91,.10);border-radius:8px;padding:7px 9px;line-height:1.4}
+.asset .disc{font-size:10px;color:var(--texto-sec);margin-top:7px;opacity:.85;line-height:1.4}
 </style>
 </head>
 <body>
@@ -384,6 +401,7 @@ canvas{display:block}
   </div>
 
   <div id="peerToasts"></div>
+  <div id="assetInfo"></div>
 </div>
 
 <!-- ============ TELA: INÍCIO ============ -->
@@ -787,6 +805,36 @@ const AMENIDADES = [
   { id:'quadra', nome:'Quadra', cost:95, cor:'#5f7a54', axis:'espaco' },
   { id:'lounge', nome:'Lounge / eventos', cost:85, cor:'#3E8ED0', axis:'status' },
 ];
+
+// ============================================================
+// LEITURA DIDÁTICA DE ATIVOS (pop-up ao escolher) + conexão com FIIs
+// Indicadores em escala 1–5 são ESTIMATIVAS DIDÁTICAS (não são dados
+// de mercado). Ajuste com dados reais do seu mercado/DF. Edite à vontade.
+// ind: { demanda, liquidez, valorizacao, ticket }  (1=baixo … 5=alto)
+// ============================================================
+const ASSET_INFO = {
+  compactos: { titulo:'Aptos compactos', texto:'Alta demanda de jovens profissionais e público solteiro em áreas centrais. Maior preço por m² e boa liquidez de locação; ticket de entrada menor.',
+    fii:'Relacionado a FIIs de renda residencial (tijolo) e de locação.', ind:{demanda:5,liquidez:4,valorizacao:3,ticket:4} },
+  familiares: { titulo:'Aptos familiares', texto:'Demanda estável de famílias; valoriza espaço e áreas comuns. Ticket maior e liquidez média; giro mais lento, porém consistente.',
+    fii:'FIIs residenciais de renda; sensível a ciclo de crédito imobiliário.', ind:{demanda:4,liquidez:3,valorizacao:3,ticket:3} },
+  casas: { titulo:'Casas', texto:'Baixa densidade e ticket alto. Valorização muito dependente de localização e do terreno; liquidez menor.',
+    fii:'Ligado a loteamentos e FIIs de desenvolvimento (mais risco/retorno).', ind:{demanda:3,liquidez:2,valorizacao:4,ticket:2} },
+  lofts: { titulo:'Lofts', texto:'Nicho de público jovem/criativo. Boa valorização em bairros em ascensão; demanda mais volátil.',
+    fii:'FIIs de nicho/gestão ativa; retorno ligado à requalificação urbana.', ind:{demanda:3,liquidez:3,valorizacao:4,ticket:3} },
+  flex: { titulo:'Unidades flexíveis', texto:'Flexibilidade de uso (morar/trabalhar) dá resiliência a ciclos econômicos e amplia o público.',
+    fii:'FIIs híbridos; adaptabilidade tende a reduzir vacância.', ind:{demanda:4,liquidez:3,valorizacao:3,ticket:3} },
+  coliving: { titulo:'Coliving', texto:'Renda por ocupação (quarto/serviços), com gestão intensiva. Público urbano e transitório; potencial de yield maior, operação mais complexa.',
+    fii:'FIIs de renda com gestão ativa; receita recorrente por serviços.', ind:{demanda:4,liquidez:3,valorizacao:4,ticket:4} },
+  misto: { titulo:'Uso misto', texto:'Combina renda comercial + residencial no mesmo ativo, diluindo risco de vacância entre usos.',
+    fii:'Relacionado a FIIs híbridos; fluxo de caixa mais diversificado.', ind:{demanda:4,liquidez:3,valorizacao:4,ticket:3} },
+  torre_premium: { titulo:'Torre premium · Smart Living', texto:'Alto padrão e forte branding. Ticket elevado e público restrito; valorização por diferenciais e serviços.',
+    fii:'FIIs premium de renda; sensível ao ciclo de alta renda.', ind:{demanda:3,liquidez:3,valorizacao:5,ticket:5} },
+  // amenidades (impacto em valor percebido / VSO)
+  piscina:   { titulo:'Piscina', texto:'Item de forte apelo de venda; eleva valor percebido, mas aumenta custo condominial.', fii:'Amenidade que sustenta ticket em FIIs residenciais.', ind:{demanda:4,liquidez:0,valorizacao:4,ticket:0} },
+  coworking: { titulo:'Coworking', texto:'Amenidade em alta pós-home office; atrai jovens profissionais e melhora VSO.', fii:'Diferencial de renda em FIIs residenciais modernos.', ind:{demanda:5,liquidez:0,valorizacao:4,ticket:0} },
+  rooftop:   { titulo:'Rooftop', texto:'Alto apelo aspiracional; reforça posicionamento premium.', fii:'Sustenta ticket em FIIs de alto padrão.', ind:{demanda:3,liquidez:0,valorizacao:4,ticket:0} },
+  horta:     { titulo:'Horta urbana', texto:'Baixo custo e forte apelo de sustentabilidade/comunidade.', fii:'Ganho de valor percebido a baixo custo (ESG).', ind:{demanda:3,liquidez:0,valorizacao:3,ticket:0} },
+};
 
 // Atributos (fase 4) por categoria
 const ATTR_GROUPS = [
@@ -1673,6 +1721,33 @@ function stopSocial(){
   if(socialTimer)clearInterval(socialTimer); if(liveTimer)clearInterval(liveTimer);
   socialTimer=liveTimer=null;
   const cont=document.getElementById('peerToasts'); if(cont) cont.innerHTML='';
+  const ai=document.getElementById('assetInfo'); if(ai) ai.innerHTML='';
+}
+
+/* ---------- card de leitura de ativo (conexão com FIIs) ---------- */
+const assetInfoShown = new Set();
+function dots(n){ let s='<span class="dots">'; for(let i=1;i<=5;i++) s+=`<i class="${i<=n?'on':''}"></i>`; return s+'</span>'; }
+function showAssetInfo(id){
+  const info = ASSET_INFO[id]; if(!info) return;
+  if(assetInfoShown.has(id)) return;            // uma vez por ativo por sessão
+  assetInfoShown.add(id);
+  const cont=document.getElementById('assetInfo'); if(!cont) return;
+  const rows=[['Demanda',info.ind.demanda],['Liquidez',info.ind.liquidez],['Valorização',info.ind.valorizacao],['Ticket',info.ind.ticket]]
+    .filter(r=>r[1]>0)
+    .map(r=>`<div class="r"><span>${r[0]}</span>${dots(r[1])}</div>`).join('');
+  const el=document.createElement('div'); el.className='asset';
+  el.innerHTML=`
+    <div class="ah"><div><div class="atag">Leitura do ativo · FIIs</div><b>${info.titulo}</b></div><button class="x" title="Fechar">✕</button></div>
+    <p>${info.texto}</p>
+    <div class="ind">${rows}</div>
+    <div class="fii">📊 ${info.fii}</div>
+    <div class="disc">Estimativa didática (escala 1–5) — ajuste com dados reais do seu mercado/DF.</div>`;
+  cont.appendChild(el);
+  chime();
+  logEvent('asset_info_shown',{id});
+  el.querySelector('.x').onclick=()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),300); };
+  setTimeout(()=>{ if(el.isConnected){ el.classList.add('out'); setTimeout(()=>el.remove(),300); } }, 12000);
+  while(cont.children.length>2) cont.firstChild.remove();
 }
 function renderModList(cat){
   const list=cat==='tipologia'?TIPOLOGIAS:AMENIDADES;
@@ -1683,7 +1758,7 @@ function renderModList(cat){
       <span class="nm">${def.featured?'★ ':''}${def.nome}</span><span class="ct">${def.cost}</span>`;
     d.onclick=()=>{ document.querySelectorAll('.mod').forEach(x=>x.classList.remove('sel'));
       d.classList.add('sel'); selectedModule={kind:cat,def};
-      updateSizeUI();
+      updateSizeUI(); showAssetInfo(def.id);
       logEvent('category_chosen',{category:cat,id:def.id}); };
     el.appendChild(d);
   });
@@ -2056,7 +2131,7 @@ document.getElementById('btnExportJSON').addEventListener('click',exportJSON);
 function restart(){
   stopSocial();
   state.terrain=null; state.concept=null; state.mission=null;
-  state.params={towers:2,m2:65,typ:'2q'}; state.likert={};
+  state.params={towers:2,m2:65,typ:'2q'}; state.likert={}; assetInfoShown.clear();
   state.placements.forEach(p=>scene.remove(p.mesh));
   state.placements=[]; occupied={}; state.attrs=new Set(); state.intent=null;
   state.budgetLeft=0; state.budgetTotal=0; selectedModule=null; sizing=false; dragStart=null;
