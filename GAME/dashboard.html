@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel docente · Cidade em Construção | ENEDES</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#09192b;--panel:#102b47;--panel-2:#153b60;--text:#ecf5fb;--muted:#a8bed0;--line:rgba(145,188,223,.2);--blue:#4394d6;--green:#44b77a;--gold:#ffc24b;--red:#ff8e8e}
+    *{box-sizing:border-box} body{margin:0;background:radial-gradient(900px 560px at 88% -10%,#194567 0%,var(--bg) 58%);font-family:Inter,system-ui,sans-serif;color:var(--text);min-height:100vh}
+    header{max-width:1280px;margin:auto;padding:28px 24px 20px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}.brand{display:flex;gap:12px;align-items:center}.mark{display:flex;gap:4px;height:28px;align-items:end}.mark i{display:block;width:8px;border-radius:2px;background:var(--green)}.mark i:nth-child(1){height:20px}.mark i:nth-child(2){height:14px;background:var(--blue)}.mark i:nth-child(3){height:26px;background:#e8dcc0}.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-weight:700}.brand h1{font-family:'Space Grotesk',sans-serif;font-size:20px;margin:2px 0 0}.controls{display:flex;gap:9px;align-items:center}.btn{font:600 13px Inter,sans-serif;border:1px solid var(--line);background:rgba(10,29,49,.72);color:var(--text);border-radius:9px;padding:10px 12px;cursor:pointer}.btn:hover{border-color:var(--blue)}.btn.primary{background:var(--gold);color:#241808;border:none}.wrap{max-width:1280px;margin:auto;padding:4px 24px 42px}.notice{border:1px solid var(--line);background:rgba(16,43,71,.7);padding:14px 16px;border-radius:12px;color:var(--muted);font-size:13px;line-height:1.55}.notice b{color:var(--text)}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}.stat,.card{background:rgba(16,43,71,.82);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 36px rgba(0,0,0,.14)}.stat{padding:18px}.stat small{display:block;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:10px}.stat strong{display:block;font:700 32px 'Space Grotesk',sans-serif;margin-top:7px}.stat em{font-style:normal;color:var(--green);font-size:12px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.card{padding:18px}.card h2{font:600 16px 'Space Grotesk',sans-serif;margin:0 0 5px}.card p.sub{font-size:12px;color:var(--muted);margin:0 0 16px;line-height:1.45}.rows{display:flex;flex-direction:column;gap:10px}.row{display:grid;grid-template-columns:minmax(104px,1.4fr) 3fr 34px;gap:10px;align-items:center;font-size:12px}.row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}.track{height:9px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}.track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--blue),var(--green))}.row b{text-align:right;font-size:11px;color:var(--gold)}.empty{color:var(--muted);font-size:13px;border:1px dashed var(--line);border-radius:10px;padding:18px;text-align:center}.status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}.dot{height:8px;width:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(68,183,122,.7)}#error{display:none;color:#ffd0d0;border-color:rgba(255,142,142,.4);background:rgba(120,28,28,.18)}.hidden{display:none!important}@media(max-width:850px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}@media(max-width:520px){header,.wrap{padding-left:16px;padding-right:16px}.stats{grid-template-columns:1fr}.row{grid-template-columns:105px 1fr 30px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="mark"><i></i><i></i><i></i></span><div><div class="eyebrow">ENEDES · acompanhamento da turma</div><h1>Cidade em Construção · Painel docente</h1></div></div>
+    <div class="controls"><button class="btn" id="refresh">Atualizar agora</button><button class="btn" id="logout">Sair</button></div>
+  </header>
+  <main class="wrap">
+    <div class="notice" id="status"><span class="status"><i class="dot"></i><span>Verificando o acesso docente…</span></span></div>
+    <div class="notice hidden" id="error"></div>
+    <section id="content" class="hidden">
+      <div class="stats">
+        <article class="stat"><small>Participantes cadastrados</small><strong id="participants">0</strong><em>turma vinculada</em></article>
+        <article class="stat"><small>Ativos nos últimos 15 min</small><strong id="active">0</strong><em>atividade recente</em></article>
+        <article class="stat"><small>Projetos concluídos</small><strong id="completed">0</strong><em>sínteses persistidas</em></article>
+        <article class="stat"><small>Código da turma</small><strong id="classCode" style="font-size:20px;margin-top:12px">—</strong><em>filtro de análise</em></article>
+      </div>
+      <div class="grid">
+        <article class="card"><h2>Andamento da experiência</h2><p class="sub">Distribuição do ponto em que cada jogador está no fluxo do jogo.</p><div class="rows" id="steps"></div></article>
+        <article class="card"><h2>Conceitos de empreendimento</h2><p class="sub">Escolhas consolidadas entre projetos já gravados.</p><div class="rows" id="concepts"></div></article>
+        <article class="card"><h2>Terrenos escolhidos</h2><p class="sub">Leitura agregada de preferência de localização.</p><div class="rows" id="terrains"></div></article>
+        <article class="card"><h2>Papéis assumidos</h2><p class="sub">Perspectivas de decisão utilizadas no jogo.</p><div class="rows" id="roles"></div></article>
+        <article class="card" style="grid-column:1/-1"><h2>Atributos priorizados</h2><p class="sub">Ranking agregado; o painel não expõe respostas individuais ou projetos de um participante específico.</p><div class="rows" id="attributes"></div></article>
+      </div>
+    </section>
+  </main>
+  <script src="js/config.js"></script>
+  <script type="module">
+    import * as sb from './js/supabase.js';
+    const $ = id => document.getElementById(id);
+    let teacher = null;
+    const format = value => String(value ?? '').replaceAll('_',' ').replace(/\b\w/g, c => c.toUpperCase());
+    function rows(target, items){
+      const el=$(target); el.innerHTML='';
+      if(!items?.length){el.innerHTML='<div class="empty">Ainda não há dados suficientes nesta turma.</div>';return;}
+      const max=Math.max(...items.map(x=>Number(x.quantidade)||0),1);
+      items.forEach(item=>{const row=document.createElement('div');row.className='row';row.innerHTML=`<span title="${format(item.rotulo)}">${format(item.rotulo)}</span><div class="track"><i style="width:${Math.max(4,Math.round((Number(item.quantidade)||0)/max*100))}%"></i></div><b>${item.quantidade}</b>`;el.appendChild(row);});
+    }
+    function render(data){
+      $('participants').textContent=data.participantes ?? 0;$('active').textContent=data.ativos_15min ?? 0;$('completed').textContent=data.projetos_concluidos ?? 0;$('classCode').textContent=data.turma_codigo || teacher.turma_codigo;
+      rows('steps',data.etapas);rows('concepts',data.conceitos);rows('terrains',data.terrenos);rows('roles',data.perfis);rows('attributes',data.atributos);
+      $('content').classList.remove('hidden');$('status').innerHTML=`<span class="status"><i class="dot"></i><span>Atualizado às ${new Date().toLocaleTimeString('pt-BR')} · atualização automática a cada 15 segundos</span></span>`;
+    }
+    async function load(){
+      try{const data=await sb.getClassDashboard(teacher.turma_codigo);render(data);$('error').classList.add('hidden');}
+      catch(error){$('error').textContent='Não foi possível carregar o painel: '+error.message;$('error').classList.remove('hidden');}
+    }
+    async function boot(){
+      try{
+        if(!sb.isConfigured) throw new Error('Supabase não configurado.');
+        const session=await sb.getSession();
+        if(!session){location.replace('login.html');return;}
+        teacher=await sb.getTeacher();
+        if(!teacher) throw new Error('Este e-mail não está cadastrado como docente. Cadastre-o na tabela docentes do Supabase e tente novamente.');
+        await load();setInterval(load,15000);
+      }catch(error){$('status').classList.add('hidden');$('error').textContent=error.message;$('error').classList.remove('hidden');}
+    }
+    $('refresh').onclick=load;$('logout').onclick=async()=>{await sb.signOut();location.replace('login.html');};boot();
+  </script>
+</body>
+</html>
