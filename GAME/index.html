@@ -1,15 +1,2086 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="refresh" content="0; url=GAME/cidade-em-construcao/login.html" />
-    <title>Cidade em Construção · ENEDES</title>
-    <script>
-      window.location.replace('GAME/cidade-em-construcao/login.html' );
-    </script>
-  </head>
-  <body>
-    <p>Abrindo <a href="GAME/cidade-em-construcao/login.html">Cidade em Construção</a>…</p>
-  </body>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cidade em Construção — O Futuro do Morar | ENEDES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Three.js via ESM (CDN). Requer conexão com a internet ao abrir o arquivo. -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<style>
+:root{
+  --azul-profundo:#0B1E33;
+  --azul-noite:#0E2A47;
+  --superficie:#12314F;
+  --superficie-2:#173A5E;
+  --azul-medio:#2E75B6;   /* ENEDES */
+  --verde:#1A6B3C;        /* ENEDES */
+  --verde-claro:#2F9E5B;
+  --areia:#E8DCC0;
+  --cinza-arq:#9AA5B1;
+  --laranja:#F5A623;      /* CTA */
+  --ambar:#FFC24B;
+  --branco:#FFFFFF;
+  --texto:#EAF1F8;
+  --texto-sec:#9FB4C9;
+  --borda:rgba(120,170,220,.18);
+  --glass:rgba(14,42,71,.72);
+  --sombra:0 18px 50px rgba(0,0,0,.45);
+  --raio:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:radial-gradient(1200px 800px at 70% -10%, #14375c 0%, var(--azul-profundo) 55%, #071522 100%);
+  color:var(--texto);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+#scene{position:fixed;inset:0;z-index:0}
+canvas{display:block}
+
+/* ---------- utilitários ---------- */
+.mono{font-family:'IBM Plex Mono',monospace}
+.display{font-family:'Space Grotesk',sans-serif}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--azul-medio)}
+.hidden{display:none !important}
+.scanline{position:relative;overflow:hidden}
+.scanline::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(120,190,255,.035) 0 2px,transparent 2px 4px);pointer-events:none}
+
+/* ---------- botões ---------- */
+.btn{
+  font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;
+  border:1px solid var(--borda);background:var(--superficie);color:var(--texto);
+  padding:12px 22px;border-radius:12px;cursor:pointer;transition:.16s ease;
+  display:inline-flex;align-items:center;gap:9px;
+}
+.btn:hover{border-color:var(--azul-medio);background:var(--superficie-2);transform:translateY(-1px)}
+.btn:focus-visible{outline:2px solid var(--ambar);outline-offset:2px}
+.btn.primary{background:linear-gradient(135deg,var(--laranja),var(--ambar));color:#20140a;border:none;box-shadow:0 8px 24px rgba(245,166,35,.28)}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.ghost{background:transparent}
+.btn.small{padding:8px 14px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ---------- painel de vidro ---------- */
+.glass{
+  background:var(--glass);
+  backdrop-filter:blur(14px);
+  border:1px solid var(--borda);
+  border-radius:var(--raio);
+  box-shadow:var(--sombra);
+}
+
+/* ---------- overlay de telas ---------- */
+.screen{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:28px}
+.screen-inner{width:min(980px,100%);max-height:92vh;overflow:auto;padding:34px}
+.screen-inner.wide{width:min(1240px,100%)}
+
+/* ---------- logo ---------- */
+.logo-slot{display:inline-flex;align-items:center;gap:10px}
+.logo-slot svg{display:block}
+.logo-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--texto-sec);opacity:.6;letter-spacing:.1em}
+
+/* ---------- start ---------- */
+.hero-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(30px,5vw,54px);line-height:1.02;letter-spacing:-.02em}
+.hero-title em{font-style:normal;color:var(--ambar)}
+.hero-sub{color:var(--texto-sec);font-size:16px;max-width:62ch;margin-top:14px;line-height:1.55}
+.consent{display:flex;gap:12px;align-items:flex-start;background:rgba(46,117,182,.10);border:1px solid var(--borda);padding:14px 16px;border-radius:12px;margin:22px 0}
+.consent input{margin-top:3px;width:18px;height:18px;accent-color:var(--verde-claro)}
+.consent label{font-size:13.5px;color:var(--texto-sec);line-height:1.5}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+
+/* ---------- cards de escolha ---------- */
+.cards{display:grid;gap:14px;margin-top:8px}
+.cards.c3{grid-template-columns:repeat(3,1fr)}
+.cards.c2{grid-template-columns:repeat(2,1fr)}
+.choice{
+  text-align:left;border:1px solid var(--borda);background:var(--superficie);
+  border-radius:14px;padding:18px;cursor:pointer;transition:.16s;position:relative;overflow:hidden;
+}
+.choice:hover{border-color:var(--azul-medio);transform:translateY(-2px);background:var(--superficie-2)}
+.choice.sel{border-color:var(--ambar);box-shadow:0 0 0 2px rgba(255,194,75,.35) inset}
+.choice .ic{font-size:26px;margin-bottom:8px;display:block}
+.choice h4{font-family:'Space Grotesk',sans-serif;font-size:17px;margin-bottom:6px}
+.choice p{font-size:13px;color:var(--texto-sec);line-height:1.45}
+.choice .meta{margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ambar)}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none}
+#hud .panel{pointer-events:auto}
+.hud-top{position:absolute;top:16px;left:16px;right:16px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.budget{padding:12px 16px;min-width:230px}
+.budget .lbl{font-size:11px;color:var(--texto-sec);letter-spacing:.08em;text-transform:uppercase}
+.budget .val{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;margin-top:2px}
+.budget .val small{font-size:12px;color:var(--texto-sec)}
+.bar{height:7px;background:rgba(255,255,255,.10);border-radius:6px;margin-top:9px;overflow:hidden}
+.bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--verde-claro),var(--ambar));transition:width .25s}
+.obj{padding:11px 15px;max-width:340px}
+.obj .eyebrow{margin-bottom:4px}
+.obj p{font-size:13.5px;line-height:1.4}
+.hud-right{display:flex;gap:8px;flex-direction:column;align-items:flex-end}
+.pill{padding:6px 11px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:11px;border:1px solid var(--borda);background:var(--glass)}
+.pill.on{color:var(--verde-claro);border-color:rgba(47,158,91,.5)}
+.pill.off{color:var(--texto-sec)}
+
+/* dock de módulos */
+.dock{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:224px;max-height:82vh;overflow:auto;padding:12px}
+.dock h5{font-family:'Space Grotesk',sans-serif;font-size:13px;letter-spacing:.02em;margin:6px 4px 8px;color:var(--texto)}
+.dock .tabs{display:flex;gap:6px;margin-bottom:10px}
+.dock .tab{flex:1;font-size:11.5px;padding:6px 4px;border-radius:8px;border:1px solid var(--borda);background:transparent;color:var(--texto-sec);cursor:pointer;font-family:'IBM Plex Mono',monospace}
+.dock .tab.sel{background:var(--azul-medio);color:#fff;border-color:transparent}
+.mod{display:flex;align-items:center;gap:10px;padding:9px;border-radius:10px;border:1px solid transparent;cursor:pointer;transition:.14s}
+.mod:hover{background:var(--superficie-2)}
+.mod.sel{border-color:var(--ambar);background:rgba(255,194,75,.08)}
+.mod.featured{background:linear-gradient(90deg,rgba(176,141,87,.16),rgba(255,194,75,.06));border:1px solid rgba(176,141,87,.4)}
+.mod.featured .nm{color:#f0d9a8;font-weight:600}
+.mod .sw{width:22px;height:22px;border-radius:6px;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.mod .nm{font-size:12.5px;line-height:1.15;flex:1}
+.mod .ct{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ambar)}
+.sizectl{border:1px solid var(--borda);border-radius:10px;padding:9px;margin-bottom:10px;background:rgba(46,117,182,.08)}
+.sizectl .lab{font-size:10.5px;color:var(--texto-sec);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.sizectl .lab .cst{font-family:'IBM Plex Mono',monospace;color:var(--ambar)}
+.sizectl .btns{display:flex;gap:5px}
+.sizebtn{flex:1;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:7px 0;border-radius:8px;border:1px solid var(--borda);background:transparent;color:var(--texto);cursor:pointer;transition:.14s}
+.sizebtn:hover{border-color:var(--azul-medio)}
+.sizebtn.sel{background:var(--verde);border-color:transparent;color:#fff}
+.sizebtn.rot{flex:none;width:38px;color:var(--ambar)}
+.sizebtn.rot.sel{background:var(--ambar);color:#20140a}
+
+/* barra inferior */
+.hud-bottom{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;padding:8px}
+.hud-bottom .sep{width:1px;height:26px;background:var(--borda)}
+.hint{position:absolute;bottom:16px;right:16px;padding:8px 12px;font-size:11.5px;color:var(--texto-sec);max-width:250px}
+.hint b{color:var(--texto)}
+
+/* progresso topo (etapas) */
+.steps{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:7px 12px}
+.steps .st{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--texto-sec);display:flex;align-items:center;gap:6px}
+.steps .st b{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:rgba(255,255,255,.06);font-size:10px}
+.steps .st.on b{background:var(--ambar);color:#20140a}
+.steps .st.done b{background:var(--verde);color:#fff}
+.steps .arr{color:var(--texto-sec);opacity:.5}
+
+/* ---------- atributos ---------- */
+.attr-group{margin-bottom:18px}
+.attr-group h4{font-family:'Space Grotesk',sans-serif;font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--borda);background:var(--superficie);color:var(--texto);padding:9px 13px;border-radius:10px;cursor:pointer;font-size:13px;transition:.14s;display:inline-flex;gap:8px;align-items:center}
+.chip:hover{border-color:var(--azul-medio)}
+.chip.on{background:rgba(47,158,91,.16);border-color:var(--verde-claro)}
+.chip .c{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ambar)}
+.chip.on .c{color:var(--verde-claro)}
+
+/* ---------- resultado / dashboard ---------- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.stat{padding:16px;border-radius:14px;background:var(--superficie);border:1px solid var(--borda)}
+.stat .k{font-size:11px;color:var(--texto-sec);text-transform:uppercase;letter-spacing:.08em}
+.stat .v{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;margin-top:4px}
+.stat .v small{font-size:13px;color:var(--texto-sec);font-weight:400}
+.card{padding:18px;border-radius:14px;background:var(--superficie);border:1px solid var(--borda)}
+.card h3{font-family:'Space Grotesk',sans-serif;font-size:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.card h3 .n{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--texto-sec)}
+
+/* barras horizontais */
+.hbars{display:flex;flex-direction:column;gap:9px}
+.hbar{display:grid;grid-template-columns:150px 1fr 44px;align-items:center;gap:10px;font-size:12.5px}
+.hbar .t{color:var(--texto-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbar .track{height:12px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden}
+.hbar .track > i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--azul-medio),var(--verde-claro))}
+.hbar .p{font-family:'IBM Plex Mono',monospace;color:var(--ambar);text-align:right;font-size:11.5px}
+
+/* heatmap */
+.heat{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.heat .cell{aspect-ratio:1.6;border-radius:6px;display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#0b1e33;font-weight:600}
+
+/* funil */
+.funnel{display:flex;flex-direction:column;gap:6px;align-items:center}
+.funnel .f{height:34px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:12.5px;color:#0b1e33;font-weight:600;background:linear-gradient(90deg,var(--azul-medio),var(--verde-claro))}
+.funnel .f .n{font-family:'IBM Plex Mono',monospace}
+
+/* legenda / notas */
+.note{font-size:11.5px;color:var(--texto-sec);margin-top:10px;line-height:1.5}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;background:rgba(46,117,182,.18);border:1px solid var(--borda);color:var(--azul-medio)}
+.insight{padding:14px;border-radius:12px;border-left:3px solid var(--ambar);background:rgba(255,194,75,.06);margin-bottom:10px}
+.insight b{color:var(--ambar)}
+.insight .src{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--texto-sec);margin-top:6px;display:block}
+
+/* comparação */
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:stretch}
+.vs .vsmid{display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--texto-sec)}
+.score{font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:700}
+.mini{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.mini .m{display:flex;justify-content:space-between;font-size:12px;color:var(--texto-sec)}
+.stars{display:flex;gap:6px}
+.stars button{font-size:22px;background:none;border:none;cursor:pointer;color:#3a5674;transition:.1s}
+.stars button.on,.stars button:hover{color:var(--ambar)}
+
+/* loading / erro */
+#loading,#error{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--azul-profundo);text-align:center;padding:30px}
+.spinner{width:46px;height:46px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--ambar);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 18px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* acessibilidade / responsivo */
+:focus-visible{outline:2px solid var(--ambar);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important;transition-duration:.05ms !important}}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(120,170,220,.25);border-radius:8px}
+@media (max-width:900px){
+  .cards.c3{grid-template-columns:1fr 1fr}
+  .grid2,.grid3{grid-template-columns:1fr}
+  .dock{display:none}
+  .hbar{grid-template-columns:110px 1fr 40px}
+}
+@media (max-width:640px){.cards.c3,.cards.c2{grid-template-columns:1fr}}
+#crosshair{position:fixed;left:50%;top:50%;width:8px;height:8px;border:2px solid rgba(255,255,255,.7);border-radius:50%;transform:translate(-50%,-50%);z-index:9;pointer-events:none;display:none}
+
+/* ---------- onboarding avatar/papel ---------- */
+.avatar-preview{width:80px;height:80px;border-radius:22px;display:grid;place-items:center;font-size:40px;background:var(--superficie-2);border:2px solid var(--borda);flex:none;transition:.2s}
+.txt{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--borda);background:var(--superficie);color:var(--texto);font-family:'Inter',sans-serif;font-size:14px}
+.txt:focus{outline:none;border-color:var(--azul-medio)}
+.swatches{display:flex;gap:8px}
+.swatches .sc{width:26px;height:26px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:.12s}
+.swatches .sc.on{border-color:var(--branco);transform:scale(1.1)}
+.role-brief{margin-top:14px;padding:16px;border-left:3px solid var(--ambar)}
+.role-brief .note b{color:var(--texto)}
+.param{border:1px solid var(--borda);background:var(--superficie);border-radius:14px;padding:16px;margin-bottom:14px}
+.param-head{display:flex;justify-content:space-between;align-items:center;font-family:'Space Grotesk',sans-serif;font-size:15px;margin-bottom:12px}
+.param-val{color:var(--ambar);font-size:16px}
+.stepper{display:flex;align-items:center;gap:14px}
+.stepper .btn{width:40px;justify-content:center;font-size:20px}
+.dots{display:flex;gap:8px;flex:1;justify-content:center}
+.dots .dot{width:34px;height:34px;border-radius:9px;border:1px solid var(--borda);display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--texto-sec)}
+.dots .dot.on{background:var(--azul-medio);color:#fff;border-color:transparent}
+.range{width:100%;accent-color:var(--ambar);height:6px}
+.range-scale{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--texto-sec);margin-top:8px}
+#m2Tag{color:var(--ambar)}
+
+/* ---------- likert ---------- */
+.likert-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--borda);border-radius:12px;background:var(--superficie);margin-bottom:9px}
+.likert-row .lk-name{font-size:14px;display:flex;align-items:center;gap:9px}
+.likert-row .lk-name .sw{width:18px;height:18px;border-radius:5px;flex:none}
+.likert{display:flex;gap:6px}
+.likert button{width:36px;height:36px;border-radius:9px;border:1px solid var(--borda);background:transparent;color:var(--texto-sec);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:14px;transition:.12s}
+.likert button:hover{border-color:var(--azul-medio)}
+.likert button.on{background:linear-gradient(135deg,var(--verde-claro),var(--ambar));color:#20140a;border-color:transparent;font-weight:600}
+.likert-legend{display:flex;justify-content:space-between;font-size:11px;color:var(--texto-sec);margin:2px 4px 12px}
+
+/* ---------- toasts sociais ---------- */
+#peerToasts{position:absolute;left:16px;bottom:86px;display:flex;flex-direction:column;gap:10px;pointer-events:none;z-index:12}
+.peer{pointer-events:auto;display:flex;gap:12px;align-items:flex-start;padding:12px 14px;max-width:320px;border-radius:14px;border:1px solid var(--borda);background:var(--glass);backdrop-filter:blur(14px);box-shadow:var(--sombra);animation:peerIn .35s ease}
+@keyframes peerIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
+.peer.out{animation:peerOut .35s ease forwards}
+@keyframes peerOut{to{opacity:0;transform:translateX(-16px)}}
+.peer .av{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;font-family:'Space Grotesk',sans-serif;font-weight:700;color:#0b1e33}
+.peer .pbody{font-size:13px;line-height:1.4}
+.peer .pbody b{color:var(--texto)}
+.peer .pcommon{margin-top:6px;font-size:11.5px;color:var(--ambar);font-family:'IBM Plex Mono',monospace}
+.peer .react{margin-top:8px;display:flex;gap:6px}
+.peer .react button{font-size:12px;padding:4px 9px;border-radius:8px;border:1px solid var(--borda);background:transparent;color:var(--texto-sec);cursor:pointer}
+.peer .react button:hover{border-color:var(--verde-claro);color:var(--verde-claro)}
+</style>
+</head>
+<body>
+
+<div id="scene" aria-hidden="true"></div>
+<div id="crosshair"></div>
+
+<!-- ============ LOADING ============ -->
+<div id="loading">
+  <div>
+    <div class="spinner"></div>
+    <div class="display" style="font-size:18px">Carregando o mundo…</div>
+    <div class="note">Preparando terreno, iluminação e módulos.</div>
+  </div>
+</div>
+
+<!-- ============ ERRO 3D ============ -->
+<div id="error" class="hidden">
+  <div class="glass" style="max-width:520px;padding:30px">
+    <h2 class="display" style="margin-bottom:10px">Não foi possível carregar o mundo 3D</h2>
+    <p class="note" style="font-size:14px">A engine 3D (Three.js) é carregada via internet (CDN). Verifique a conexão e recarregue. Se a rede bloqueia CDNs, use a versão do repositório (Three.js embutido localmente).</p>
+  </div>
+</div>
+
+<div id="bootfail" class="hidden" style="position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:#0B1E33;padding:28px">
+  <div class="glass" style="max-width:560px;padding:30px">
+    <h2 class="display" style="margin-bottom:12px">A cena não iniciou</h2>
+    <p class="note" style="font-size:14px;margin-bottom:10px">Causas mais comuns: rede bloqueando o CDN do Three.js, ou abertura por <b>file://</b>. Abra o <b>Console (F12)</b> e veja a primeira linha em vermelho. A versão do repositório (Three.js local) evita o bloqueio de CDN.</p>
+  </div>
+</div>
+<script>
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      if(!window.__cidadeReady){
+        var l=document.getElementById('loading'); if(l) l.classList.add('hidden');
+        var b=document.getElementById('bootfail'); if(b) b.classList.remove('hidden');
+      }
+    },7000);
+  });
+</script>
+
+<!-- ============ HUD (durante o jogo) ============ -->
+<div id="hud" class="hidden">
+  <!-- etapas -->
+  <div class="steps glass panel" id="steps"></div>
+
+  <div class="hud-top">
+    <div class="budget glass panel">
+      <div class="lbl">Orçamento de desenvolvimento</div>
+      <div class="val"><span id="budgetLeft" class="mono">0</span> <small>/ <span id="budgetTotal" class="mono">0</span> créditos</small></div>
+      <div class="bar"><i id="budgetBar" style="width:100%"></i></div>
+    </div>
+    <div class="hud-right">
+      <div class="obj glass panel">
+        <div class="eyebrow">Missão atual</div>
+        <p id="missionText">—</p>
+      </div>
+      <div class="pill panel" id="researchPill"><span>pesquisa: —</span></div>
+      <div class="pill panel on" id="livePill"><span>● — projetando agora</span></div>
+      <div class="pill panel" id="avatarPill" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- dock de módulos -->
+  <div class="dock glass panel" id="dock">
+    <div class="tabs">
+      <button class="tab sel" data-cat="tipologia">Edifícios</button>
+      <button class="tab" data-cat="amenidade">Áreas comuns</button>
+    </div>
+    <div class="sizectl">
+      <div class="lab"><span>Tamanho do item</span><span class="cst" id="sizeCost">arraste no terreno</span></div>
+      <div style="font-size:10.5px;color:var(--texto-sec);line-height:1.4">Clique e <b>arraste</b> sobre o terreno para definir a área — quanto maior, mais caro. Um clique simples cria 1×1.</div>
+    </div>
+    <div id="modList"></div>
+  </div>
+
+  <!-- barra inferior -->
+  <div class="hud-bottom glass panel">
+    <button class="btn small ghost" id="btnUndo" title="Desfazer última colocação">↶ Desfazer</button>
+    <div class="sep"></div>
+    <button class="btn small ghost" id="btnVisit">👤 Visitar</button>
+    <button class="btn small ghost" id="btnView">Câmera: 3ª pessoa</button>
+    <div class="sep"></div>
+    <button class="btn small ghost" id="btnMute">🔊 Áudio</button>
+    <div class="sep"></div>
+    <button class="btn small primary" id="btnNext">Definir atributos →</button>
+  </div>
+
+  <div class="hint glass panel">
+    Selecione um item e <b>arraste sobre o terreno</b> para desenhar a área dele (maior = mais caro). Um clique cria 1×1. <b>Arraste fora do terreno</b> gira a câmera, <b>scroll</b> dá zoom. No modo Visitar use <b>W A S D</b>.
+  </div>
+
+  <div id="peerToasts"></div>
+</div>
+
+<!-- ============ TELA: INÍCIO ============ -->
+<div id="s-start" class="screen">
+  <div class="screen-inner glass scanline">
+    <div class="logo-slot" id="logoSlot"></div>
+    <div class="eyebrow" style="margin-top:26px">ENEDES · Lab Consumer · Pesquisa de mercado imobiliário</div>
+    <h1 class="hero-title" style="margin-top:10px">Cidade em Construção<br><em>O Futuro do Morar</em></h1>
+    <p class="hero-sub">Um sandbox urbano onde você projeta um empreendimento imobiliário do zero — escolhe terreno, tipologia, áreas comuns, sustentabilidade e tecnologia — dentro de um orçamento. Cada decisão vira dado de pesquisa e, no fim, revela quais atributos você realmente valoriza no morar.</p>
+
+    <div class="consent">
+      <input type="checkbox" id="consentBox" />
+      <label for="consentBox">
+        <b>Participar da pesquisa (opcional).</b> Autorizo o registro <b>anônimo</b> das minhas interações no jogo (escolhas, tempos e sequência) para gerar insights agregados. Não é solicitado nenhum dado pessoal identificável. Posso jogar mesmo sem marcar esta opção — nesse caso, nada é registrado.
+      </label>
+    </div>
+    <div class="consent" style="background:rgba(245,166,35,.08);border-color:rgba(245,166,35,.3)">
+      <input type="checkbox" id="demoBox" />
+      <label for="demoBox">
+        <b>Modo demonstração (para aula).</b> Registra os eventos <b>localmente no seu navegador</b> para mostrar, ao vivo, como cada decisão vira dado — e permite exportar a sessão em CSV/JSON. Não é pesquisa e nada é enviado para fora.
+      </label>
+    </div>
+
+    <div class="row">
+      <button class="btn primary" id="btnStart">Começar experiência</button>
+      <button class="btn ghost" id="btnExplore">Explorar projetos / Painel de insights</button>
+    </div>
+    <p class="note">MVP demonstrativo · Estética voxel autoral · Sem uso de personagens, texturas, marcas ou elementos proprietários de terceiros.</p>
+  </div>
+</div>
+
+<!-- ============ TELA: AVATAR + PAPEL ============ -->
+<div id="s-role" class="screen hidden">
+  <div class="screen-inner glass scanline" style="width:min(920px,100%)">
+    <div class="eyebrow">Antes de começar · Seu avatar</div>
+    <h2 class="display" style="font-size:26px;margin:6px 0 4px">Quem é você neste ecossistema?</h2>
+    <p class="note" style="margin-bottom:16px">Seu papel muda a lente com que você projeta — e o objetivo do jogo se adapta a ele. Escolha e receba instruções sob medida.</p>
+
+    <div style="display:flex;gap:18px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <div class="avatar-preview" id="avatarPreview">🙂</div>
+      <div style="flex:1;min-width:220px">
+        <label class="note" style="display:block;margin-bottom:6px">Seu nome ou apelido (opcional)</label>
+        <input type="text" id="avatarName" maxlength="24" placeholder="ex.: Amanda" class="txt" />
+        <div class="swatches" id="avatarSwatches" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <div class="cards c3" id="roleCards"></div>
+
+    <div class="role-brief glass" id="roleBrief" style="display:none">
+      <div class="eyebrow" id="roleBriefRole">—</div>
+      <p id="roleBriefObj" style="font-size:15px;margin:6px 0 8px;font-weight:600"></p>
+      <p class="note" id="roleBriefInstr"></p>
+      <div class="note" style="margin-top:10px">Como funciona: você escolhe <b>terreno</b> → <b>conceito</b> → define <b>parâmetros</b> (torres e metragem) → <b>constrói</b> arrastando itens (o tamanho reflete a importância) → prioriza <b>atributos</b> no orçamento → declara a <b>importância</b> (Likert) → <b>compara</b> e vê seus <b>insights</b>.</div>
+    </div>
+
+    <div class="row" style="margin-top:18px;justify-content:space-between">
+      <button class="btn ghost" data-goto="start">← Voltar</button>
+      <button class="btn primary" id="roleNext" disabled>Entrar no jogo →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA: TERRENO ============ -->
+<div id="s-terrain" class="screen hidden">
+  <div class="screen-inner glass">
+    <div class="eyebrow">Etapa 1 · Localização</div>
+    <h2 class="display" style="font-size:26px;margin:6px 0 4px">Escolha o terreno</h2>
+    <p class="note" style="margin-bottom:16px">A localização define o custo da terra, o orçamento restante e o caráter do bairro. Compare antes de decidir.</p>
+    <div class="cards c3" id="terrainCards"></div>
+    <div class="row" style="margin-top:20px;justify-content:space-between">
+      <button class="btn ghost" data-goto="start">← Voltar</button>
+      <button class="btn primary" id="terrainNext" disabled>Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA: CONCEITO ============ -->
+<div id="s-concept" class="screen hidden">
+  <div class="screen-inner glass">
+    <div class="eyebrow">Etapa 2 · Conceito do empreendimento</div>
+    <h2 class="display" style="font-size:26px;margin:6px 0 4px">Qual a essência do produto?</h2>
+    <p class="note" style="margin-bottom:16px">O conceito orienta o público-alvo e o posicionamento. Você ainda poderá construir livremente na etapa seguinte.</p>
+    <div class="cards c3" id="conceptCards"></div>
+    <div class="row" style="margin-top:20px;justify-content:space-between">
+      <button class="btn ghost" data-goto="terrain">← Voltar</button>
+      <button class="btn primary" id="conceptNext" disabled>Ir para a construção →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA: PARÂMETROS ============ -->
+<div id="s-params" class="screen hidden">
+  <div class="screen-inner glass" style="width:min(760px,100%)">
+    <div class="eyebrow">Etapa 3 · Parâmetros do empreendimento</div>
+    <h2 class="display" style="font-size:26px;margin:6px 0 4px">Defina a escala do produto</h2>
+    <p class="note" style="margin-bottom:18px">Antes de construir, defina o porte. Essas escolhas viram dados de intenção e orientam a meta da construção.</p>
+
+    <div class="param">
+      <div class="param-head"><span>Número de torres</span><span class="param-val mono" id="towersVal">2</span></div>
+      <div class="stepper">
+        <button class="btn small ghost" id="towersMinus">−</button>
+        <div class="dots" id="towersDots"></div>
+        <button class="btn small ghost" id="towersPlus">+</button>
+      </div>
+      <p class="note">Quantas torres o empreendimento terá (1 a 4).</p>
+    </div>
+
+    <div class="param">
+      <div class="param-head"><span>Metragem média das unidades</span><span class="param-val mono" id="m2Val">65 m²</span></div>
+      <input type="range" id="m2Range" min="30" max="150" step="5" value="65" class="range" />
+      <div class="range-scale"><span>30 m²</span><span id="m2Tag">compacto</span><span>150 m²</span></div>
+    </div>
+
+    <div class="param">
+      <div class="param-head"><span>Perfil de planta predominante</span></div>
+      <div class="chips" id="typChips"></div>
+    </div>
+
+    <div class="row" style="margin-top:20px;justify-content:space-between">
+      <button class="btn ghost" data-goto="concept">← Voltar</button>
+      <button class="btn primary" id="paramsNext">Ir para a construção →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA: ATRIBUTOS ============ -->
+<div id="s-attrs" class="screen hidden">
+  <div class="screen-inner glass" style="width:min(860px,100%)">
+    <div class="eyebrow">Etapa 5 · Priorização de atributos</div>
+    <h2 class="display" style="font-size:26px;margin:6px 0 4px">Onde investir o que sobrou?</h2>
+    <p class="note" style="margin-bottom:8px">Cada atributo tem um custo. Priorize dentro do orçamento — você precisará abrir mão de alguns.</p>
+    <div class="budget" style="padding:10px 0 16px">
+      <div class="val" style="font-size:18px">Restam <span id="attrBudget" class="mono" style="color:var(--ambar)">0</span> créditos</div>
+      <div class="bar"><i id="attrBar" style="width:100%"></i></div>
+    </div>
+    <div id="attrGroups"></div>
+    <div class="row" style="margin-top:14px;justify-content:space-between">
+      <button class="btn ghost" id="attrBack">← Voltar à construção</button>
+      <button class="btn primary" id="attrNext">Comparar propostas →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA: IMPORTÂNCIA (LIKERT) ============ -->
+<div id="s-likert" class="screen hidden">
+  <div class="screen-inner glass" style="width:min(820px,100%)">
+    <div class="eyebrow">Etapa 6 · Importância declarada</div>
+    <h2 class="display" style="font-size:26px;margin:6px 0 4px">O quanto cada escolha importa para você?</h2>
+    <p class="note" style="margin-bottom:16px">Você já revelou suas prioridades construindo. Agora declare a importância de cada item numa escala de 1 (nada importante) a 5 (essencial). Comparar o revelado com o declarado é onde nascem os melhores insights.</p>
+    <div id="likertRows"></div>
+    <div class="row" style="margin-top:18px;justify-content:space-between">
+      <button class="btn ghost" id="likertBack">← Voltar aos atributos</button>
+      <button class="btn primary" id="likertNext">Comparar propostas →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA: COMPARAÇÃO ============ -->
+<div id="s-compare" class="screen hidden">
+  <div class="screen-inner glass wide">
+    <div class="eyebrow">Etapa 7 · Comparação</div>
+    <h2 class="display" style="font-size:26px;margin:6px 0 14px">Seu projeto x alternativas do mercado</h2>
+    <div class="vs" id="vsWrap"></div>
+    <div class="card" style="margin-top:16px">
+      <h3>Vote no projeto em destaque <span class="n">avaliação rápida</span></h3>
+      <p class="note" id="voteTarget" style="margin-bottom:12px"></p>
+      <div id="voteCriteria"></div>
+    </div>
+    <div class="row" style="margin-top:18px;justify-content:space-between">
+      <button class="btn ghost" id="compareBack">← Ajustar atributos</button>
+      <button class="btn primary" id="compareNext">Ver meu resultado →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA: RESULTADO ============ -->
+<div id="s-result" class="screen hidden">
+  <div class="screen-inner glass wide">
+    <div class="eyebrow">Meu produto imobiliário</div>
+    <h2 class="display" style="font-size:28px;margin:6px 0 4px" id="resultTitle">—</h2>
+    <p class="note" style="margin-bottom:16px" id="resultConcept">—</p>
+
+    <div class="grid3" style="margin-bottom:16px">
+      <div class="stat"><div class="k">Orçamento utilizado</div><div class="v mono" id="rBudget">—</div></div>
+      <div class="stat"><div class="k">Nível de sustentabilidade</div><div class="v" id="rSust">—</div></div>
+      <div class="stat"><div class="k">Perfil comportamental estimado</div><div class="v" id="rProfile" style="font-size:19px">—</div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Atributos priorizados</h3>
+        <div id="rAttrs" class="hbars"></div>
+      </div>
+      <div class="card">
+        <h3>Você x demais participantes <span class="n">amostra agregada</span></h3>
+        <div id="rCompareAgg" class="hbars"></div>
+        <p class="note">Comparação entre as suas escolhas e a preferência média do conjunto de participantes (dados fictícios de demonstração).</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Intenção declarada</h3>
+      <p class="note" style="margin-bottom:10px">Depois de projetar este empreendimento, qual é a sua intenção? (opcional)</p>
+      <div class="chips" id="intentChips"></div>
+    </div>
+
+    <div class="row" style="margin-top:18px;justify-content:space-between">
+      <button class="btn ghost" id="btnShare">⧉ Copiar resumo do projeto</button>
+      <div class="row">
+        <button class="btn ghost" id="btnDashboard">Ver painel de insights →</button>
+        <button class="btn primary" id="btnRestart">Criar novo projeto</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TELA: PAINEL DE INSIGHTS ============ -->
+<div id="s-dash" class="screen hidden">
+  <div class="screen-inner glass wide">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div>
+        <div class="eyebrow">Painel de insights · gestores</div>
+        <h2 class="display" style="font-size:26px;margin:4px 0 2px">Preferências agregadas de moradia</h2>
+      </div>
+      <div class="logo-slot" id="logoSlotDash"></div>
+    </div>
+    <p class="note" style="margin:6px 0 16px">
+      <span class="badge">amostra N = <span id="sampleN">—</span></span>
+      Dados <b>anonimizados e agregados</b>. Nenhum participante é identificável. Os números baseiam-se em um conjunto fictício de demonstração somado à sua sessão atual.
+    </p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Ranking de atributos mais desejados <span class="n">% de projetos que incluíram</span></h3>
+        <div id="dashRanking" class="hbars"></div>
+      </div>
+      <div class="card">
+        <h3>Matriz custo × desejo <span class="n">quadrantes de decisão</span></h3>
+        <div id="dashMatrix"></div>
+        <p class="note">Eixo X = custo relativo do atributo · Eixo Y = frequência de escolha. Canto superior esquerdo = alto desejo e baixo custo (prioridade de produto).</p>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:16px">
+      <div class="card">
+        <h3>Mapa de calor de escolhas <span class="n">áreas comuns</span></h3>
+        <div id="dashHeat" class="heat"></div>
+        <p class="note">Intensidade proporcional à frequência de seleção de cada área comum.</p>
+      </div>
+      <div class="card">
+        <h3>Funil de participação <span class="n">etapas concluídas</span></h3>
+        <div id="dashFunnel" class="funnel"></div>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:16px">
+      <div class="card">
+        <h3>Segmentos comportamentais <span class="n">padrões observados</span></h3>
+        <div id="dashSegments" class="hbars"></div>
+        <p class="note">Padrões de preferência, não diagnósticos definitivos. Participantes sem perfil informado entram como “perfil comportamental anônimo”.</p>
+      </div>
+      <div class="card">
+        <h3>Insights emergentes</h3>
+        <div id="dashInsights"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;border-left:3px solid var(--azul-medio)">
+      <h3>Para a aula · como ler estes dados <span class="n">roteiro do instrutor</span></h3>
+      <div id="dashTeaching" style="font-size:13.5px;line-height:1.55;color:var(--texto)"></div>
+    </div>
+
+    <div class="row" style="margin-top:18px;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <button class="btn ghost" id="dashBack">← Voltar</button>
+      <div class="row" style="gap:10px">
+        <button class="btn ghost" id="btnExportCSV">⬇ Baixar dados (CSV)</button>
+        <button class="btn ghost" id="btnExportJSON">⬇ Baixar eventos (JSON)</button>
+        <button class="btn primary" id="dashRestart">Criar meu projeto</button>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* =========================================================
+   0. LOGO ENEDES — ESPAÇO RESERVADO (placeholder)
+   Substitua o SVG abaixo pelo arquivo oficial da marca:
+   ex.: logoSlot.innerHTML = '<img src="enedes-logo.svg" height="34" alt="ENEDES">';
+   ========================================================= */
+function enedesLogoSVG(){
+  return `
+  <svg width="150" height="34" viewBox="0 0 150 34" role="img" aria-label="ENEDES (logo provisória)">
+    <g>
+      <rect x="0" y="4"  width="9" height="26" rx="2" fill="#1A6B3C"/>
+      <rect x="11" y="10" width="9" height="20" rx="2" fill="#2E75B6"/>
+      <rect x="22" y="0"  width="9" height="30" rx="2" fill="#E8DCC0"/>
+    </g>
+    <text x="40" y="17" font-family="Space Grotesk, sans-serif" font-size="17" font-weight="700" fill="#EAF1F8">ENEDES</text>
+    <text x="40" y="29" font-family="IBM Plex Mono, monospace" font-size="7.5" fill="#9FB4C9">ESCOLA DE NEGÓCIOS · DESENV. SOCIAL</text>
+  </svg>
+  <span class="logo-tag">logo provisória — substituir pelo arquivo oficial</span>`;
+}
+document.getElementById('logoSlot').innerHTML = enedesLogoSVG();
+document.getElementById('logoSlotDash').innerHTML = enedesLogoSVG();
+
+/* =========================================================
+   1. DADOS DE DOMÍNIO
+   ========================================================= */
+const TERRAINS = [
+  { id:'centro', ic:'🏙️', nome:'Centro urbano', land:700,
+    desc:'Alta centralidade, mobilidade e valorização. Terreno caro e adensado.',
+    bud:2000, tema:{ground:'#5b6673', trees:2, water:false, dense:true, mobility:2, nature:0} },
+  { id:'planejado', ic:'🗺️', nome:'Bairro planejado', land:500,
+    desc:'Equilíbrio entre infraestrutura, verde e custo. Malha organizada.',
+    bud:2200, tema:{ground:'#5f7a54', trees:6, water:false, dense:false, mobility:1, nature:1} },
+  { id:'natureza', ic:'🌳', nome:'Próximo à natureza', land:450,
+    desc:'Vista e áreas verdes abundantes, água próxima. Mobilidade menor.',
+    bud:2300, tema:{ground:'#4f7d4a', trees:12, water:true, dense:false, mobility:0, nature:2} },
+];
+
+const CONCEPTS = [
+  { id:'compacto', ic:'🧭', nome:'Compacto e conectado', desc:'Unidades enxutas, localização e mobilidade no centro da proposta.' },
+  { id:'familiar', ic:'👨‍👩‍👧', nome:'Familiar', desc:'Espaço, plantas amplas e áreas comuns para conviver.' },
+  { id:'sustentavel', ic:'🌱', nome:'Sustentável', desc:'Baixo impacto, eficiência e integração com o verde.' },
+  { id:'premium', ic:'💎', nome:'Premium', desc:'Alto padrão, experiência e serviços diferenciados.' },
+  { id:'acessivel', ic:'🔑', nome:'Acessível', desc:'Melhor custo, eficiência e entrada facilitada.' },
+  { id:'misto', ic:'🏬', nome:'Uso misto', desc:'Moradia + comércio e serviços no mesmo ecossistema.' },
+];
+
+// Papéis no ecossistema (onboarding) — cada um traz objetivo e instruções próprias
+const ROLES = [
+  { id:'morador', emoji:'🏠', cor:'#2E75B6', nome:'Morador',
+    desc:'Você quer morar aqui.',
+    obj:'Projete o lugar onde VOCÊ moraria — priorize o que faz sentido para a sua vida.',
+    instr:'Construa pensando no seu dia a dia. Cada escolha e o tamanho de cada item revelam o que realmente importa no morar.' },
+  { id:'construtor', emoji:'🏗️', cor:'#F5A623', nome:'Construtor / Incorporador',
+    desc:'Você desenvolve o produto.',
+    obj:'Encontre o produto que vende: equilibre desejo do cliente e viabilidade dentro do orçamento.',
+    instr:'Cada crédito conta. Priorize atributos de alto desejo e bom custo e compare seu projeto com o mercado.' },
+  { id:'especialista', emoji:'📐', cor:'#2F9E5B', nome:'Especialista (urbanista/arquiteto)',
+    desc:'Você pensa a cidade.',
+    obj:'Projete com visão de cidade: experiência do bairro, sustentabilidade e mobilidade.',
+    instr:'Explore áreas comuns, verde e mobilidade. Pense a vida coletiva, não apenas a unidade.' },
+  { id:'corretor', emoji:'🤝', cor:'#7C5CBF', nome:'Corretor',
+    desc:'Você conhece o cliente.',
+    obj:'Monte o empreendimento dos sonhos do cliente e entenda o que move a decisão de compra.',
+    instr:'Descubra os atributos decisivos. No fim, veja como suas escolhas se comparam às dos outros participantes.' },
+  { id:'investidor', emoji:'📈', cor:'#3EA7D6', nome:'Investidor',
+    desc:'Você busca retorno.',
+    obj:'Busque o melhor valor percebido: atributos que valorizam sem inflar o custo.',
+    instr:'Foque no quadrante alto desejo × baixo custo. Eficiência de orçamento é o seu jogo.' },
+];
+
+// Participantes simulados (camada social). Em produção, viriam do multiplayer real.
+const PEERS = [
+  { n:'Marina', age:29, tag:'#F5A623', wants:['piscina','coworking','solar','biciclet'] },
+  { n:'Rafael', age:35, tag:'#2E75B6', wants:['familiares','brinquedoteca','verde','acesso'] },
+  { n:'Camila', age:24, tag:'#2F9E5B', wants:['compactos','coworking','wifi','transporte'] },
+  { n:'João',   age:41, tag:'#7C5CBF', wants:['torre_premium','rooftop','automacao','piscina'] },
+  { n:'Beatriz',age:33, tag:'#E07A5F', wants:['coliving','horta','solar','pet'] },
+  { n:'Diego',  age:38, tag:'#3EA7D6', wants:['casas','quadra','verde','estac'] },
+  { n:'Aline',  age:27, tag:'#2F9E5B', wants:['flex','horta','ventilacao','biciclet'] },
+];
+
+const MISSIONS = [
+  { id:'familia', txt:'Crie o melhor empreendimento para famílias dentro do orçamento.' },
+  { id:'sust', txt:'Desenvolva um projeto sustentável sem estourar o orçamento.' },
+  { id:'jovem', txt:'Crie um produto compacto e conectado para jovens profissionais.' },
+  { id:'mob', txt:'Aumente a mobilidade sem ampliar o número de vagas de carro.' },
+];
+
+// Tipologias (edifícios) — footprint 1 célula, altura em blocos
+const TIPOLOGIAS = [
+  { id:'torre_premium', nome:'Torre premium · Smart Living', cost:320, cor:'#B08D57', h:16, axis:'status', featured:true },
+  { id:'compactos', nome:'Aptos compactos', cost:180, cor:'#2E75B6', h:6, axis:'praticidade' },
+  { id:'familiares', nome:'Aptos familiares', cost:220, cor:'#3E8ED0', h:5, axis:'espaco' },
+  { id:'casas', nome:'Casas', cost:160, cor:'#C9A56A', h:2, axis:'espaco' },
+  { id:'lofts', nome:'Lofts', cost:190, cor:'#7C5CBF', h:4, axis:'status' },
+  { id:'flex', nome:'Unidades flexíveis', cost:200, cor:'#2F9E5B', h:5, axis:'praticidade' },
+  { id:'coliving', nome:'Coliving', cost:210, cor:'#E07A5F', h:4, axis:'sustentabilidade' },
+  { id:'misto', nome:'Uso misto', cost:240, cor:'#F5A623', h:5, axis:'status' },
+];
+
+// Áreas comuns (amenidades) — objetos baixos
+const AMENIDADES = [
+  { id:'piscina', nome:'Piscina', cost:110, cor:'#3EA7D6', axis:'status' },
+  { id:'academia', nome:'Academia', cost:90, cor:'#9AA5B1', axis:'praticidade' },
+  { id:'coworking', nome:'Coworking', cost:100, cor:'#2E75B6', axis:'praticidade' },
+  { id:'salao', nome:'Salão de festas', cost:80, cor:'#E07A5F', axis:'status' },
+  { id:'pet', nome:'Espaço pet', cost:60, cor:'#C9A56A', axis:'sustentabilidade' },
+  { id:'lavanderia', nome:'Lavanderia comp.', cost:55, cor:'#9AA5B1', axis:'praticidade' },
+  { id:'brinquedoteca', nome:'Brinquedoteca', cost:70, cor:'#F5A623', axis:'espaco' },
+  { id:'rooftop', nome:'Rooftop', cost:120, cor:'#7C5CBF', axis:'status' },
+  { id:'horta', nome:'Horta urbana', cost:65, cor:'#2F9E5B', axis:'sustentabilidade' },
+  { id:'praca', nome:'Praça', cost:75, cor:'#4f9e5b', axis:'sustentabilidade' },
+  { id:'quadra', nome:'Quadra', cost:95, cor:'#5f7a54', axis:'espaco' },
+  { id:'lounge', nome:'Lounge / eventos', cost:85, cor:'#3E8ED0', axis:'status' },
+];
+
+// Atributos (fase 4) por categoria
+const ATTR_GROUPS = [
+  { cat:'Sustentabilidade', icon:'🌱', axis:'sustentabilidade', items:[
+    {id:'solar',nome:'Energia solar',cost:80},{id:'agua',nome:'Captação de água',cost:60},
+    {id:'ventilacao',nome:'Ventilação natural',cost:40},{id:'verde',nome:'Áreas verdes',cost:50},
+    {id:'materiais',nome:'Materiais de baixo impacto',cost:70},{id:'medicao',nome:'Medição inteligente',cost:45},
+  ]},
+  { cat:'Tecnologia', icon:'📡', axis:'praticidade', items:[
+    {id:'portaria',nome:'Portaria remota',cost:55},{id:'fechadura',nome:'Fechadura digital',cost:35},
+    {id:'appcond',nome:'App condominial',cost:40},{id:'automacao',nome:'Automação residencial',cost:75},
+    {id:'wifi',nome:'Internet nas áreas comuns',cost:30},{id:'iaman',nome:'IA de manutenção',cost:65},
+  ]},
+  { cat:'Mobilidade', icon:'🚲', axis:'praticidade', items:[
+    {id:'estac',nome:'Estacionamento',cost:60},{id:'biciclet',nome:'Bicicletário',cost:25},
+    {id:'ev',nome:'Carregadores EV',cost:55},{id:'transporte',nome:'Acesso a transporte público',cost:45},
+    {id:'compart',nome:'Compartilhamento de veículos',cost:50},{id:'entregas',nome:'Áreas de entrega',cost:30},
+  ]},
+  { cat:'Segurança', icon:'🛡️', axis:'praticidade', items:[
+    {id:'acesso',nome:'Controle de acesso',cost:50},{id:'monitor',nome:'Monitoramento',cost:45},
+    {id:'ilum',nome:'Iluminação urbana',cost:35},{id:'pedestre',nome:'Circulação de pedestres',cost:30},
+    {id:'servicos',nome:'Integração com serviços locais',cost:40},
+  ]},
+];
+
+const INTENTS = [
+  {id:'morar',nome:'🏠 Moraria aqui'},{id:'comprar',nome:'💳 Compraria'},
+  {id:'investir',nome:'📈 Investiria'},{id:'recomendar',nome:'📣 Recomendaria'},
+  {id:'nenhum',nome:'— Nenhuma no momento'},
+];
+
+const AXIS_LABEL = {
+  praticidade:'Praticidade e mobilidade',
+  espaco:'Espaço e família',
+  sustentabilidade:'Sustentabilidade e comunidade',
+  status:'Status e experiência premium',
+  preco:'Preço e eficiência',
+};
+
+/* =========================================================
+   2. ESTADO + REGISTRO DE EVENTOS (anonimizado)
+   ========================================================= */
+const state = {
+  consent:false,
+  demo:false,
+  role:null, avatar:{name:'',color:'#2E75B6'},
+  terrain:null, concept:null, mission:null,
+  params:{towers:2,m2:65,typ:'2q'},
+  budgetTotal:0, budgetLeft:0,
+  placements:[],           // {kind, id, cell, mesh}
+  attrs:new Set(),         // ids de atributos priorizados
+  likert:{},               // id -> 1..5 (importância declarada)
+  economic:'equilibrio',
+  intent:null,
+  events:[],
+  stepStart:performance.now(),
+  muted:false,
+};
+
+function logEvent(type, payload={}){
+  if(!state.consent && !state.demo) return;   // registra com consentimento OU em modo demonstração
+  state.events.push({ t:Date.now(), type, ...payload });
+}
+function markStep(name){
+  const now=performance.now();
+  logEvent('dwell_time',{step:name, ms:Math.round(now-state.stepStart)});
+  state.stepStart=now;
+}
+
+/* =========================================================
+   3. DATASET FICTÍCIO (demonstração do painel)
+   ========================================================= */
+const DEMO = {
+  N: 480,
+  // % de projetos que incluíram cada atributo-chave
+  ranking: [
+    ['Energia solar',71],['Áreas verdes',68],['Controle de acesso',64],
+    ['App condominial',61],['Coworking',57],['Ventilação natural',55],
+    ['Bicicletário',52],['Automação residencial',48],['Piscina',46],
+    ['Carregadores EV',41],['Rooftop',33],['Compartilhamento de veículos',22],
+  ],
+  // custo relativo (0-1) x desejo (0-1) por atributo
+  matrix: [
+    ['Ventilação natural',.20,.55],['Bicicletário',.15,.52],['App condominial',.30,.61],
+    ['Áreas verdes',.35,.68],['Energia solar',.72,.71],['Automação',.68,.48],
+    ['Piscina',.75,.46],['Rooftop',.80,.33],['EV',.55,.41],['Coworking',.50,.57],
+  ],
+  amenities: { // frequência 0-100
+    Piscina:46, Academia:53, Coworking:57, 'Salão':38, Pet:44, Lavanderia:31,
+    Brinquedoteca:36, Rooftop:33, Horta:49, 'Praça':61, Quadra:29, Lounge:40,
+  },
+  funnel: [['Iniciaram',480],['Escolheram terreno',462],['Definiram conceito',441],['Construíram',408],['Priorizaram atributos',371],['Concluíram',352]],
+  segments: [['Praticidade e mobilidade',132],['Espaço e família',118],['Sustentabilidade e comunidade',97],['Status e experiência premium',74],['Preço e eficiência',59]],
+  insights: [
+    {t:'Conflito preço × desejo em energia solar', d:'Energia solar aparece no topo do desejo (71%) mas tem custo relativo alto — forte candidato a diferencial de posicionamento e possível gargalo de viabilidade.', n:'base: 480 projetos · atributo "energia solar"'},
+    {t:'Áreas verdes e ventilação natural: alto desejo, baixo custo', d:'Ambos ficam no quadrante de prioridade (muito escolhidos e baratos). Ganhos rápidos de valor percebido.', n:'base: 480 projetos · matriz custo×desejo'},
+    {t:'Vagas de carro perdem espaço para mobilidade ativa', d:'Bicicletário (52%) supera carregadores EV (41%); compartilhamento de veículos ainda é nicho (22%).', n:'base: 480 projetos · categoria mobilidade'},
+  ],
+};
+
+/* =========================================================
+   4. CENA 3D (Three.js)
+   ========================================================= */
+let renderer, scene, camera, controls, raycaster, ground, ghost;
+const GRID = 7, CELL = 2, HALF = (GRID*CELL)/2;
+let occupied = {};       // "x,z" -> placement (uma entrada por célula ocupada)
+let selectedModule = null; // {kind, def}
+
+// --- sistema de tamanho (footprint em células do terreno) ---
+// --- dimensionamento por ARRASTE (rubber-band na malha do terreno) ---
+function sizeCostArea(def,area){ return Math.round(def.cost*(1+(area-1)*0.7)); } // área maior custa mais
+function footprintCells(ix,iz,w,d){ const a=[]; for(let dx=0;dx<w;dx++)for(let dz=0;dz<d;dz++)a.push([ix+dx,iz+dz]); return a; }
+function footprintValid(cells){ return cells.every(([x,z])=> x>=0&&z>=0&&x<GRID&&z<GRID && !occupied[cellKey(x,z)]); }
+function footprintCenterWorld(ix,iz,w,d){ const a=cellToWorld(ix,iz); return { x:a.x+(w-1)*CELL/2, z:a.z+(d-1)*CELL/2 }; }
+function rectFrom(a,b){ // dois cells -> retângulo {ix,iz,w,d}
+  const ix=Math.min(a.ix,b.ix), iz=Math.min(a.iz,b.iz);
+  return { ix, iz, w:Math.abs(a.ix-b.ix)+1, d:Math.abs(a.iz-b.iz)+1 };
+}
+function clampRect(r){ // mantém dentro da malha
+  const ix=Math.max(0,Math.min(r.ix,GRID-1)), iz=Math.max(0,Math.min(r.iz,GRID-1));
+  return { ix, iz, w:Math.min(r.w,GRID-ix), d:Math.min(r.d,GRID-iz) };
+}
+let modeWalk = false, thirdPerson = true, avatar=null;
+const keys = {};
+let listenerAdded=false;
+
+function initThree(){
+  const el=document.getElementById('scene');
+  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.25;
+  el.appendChild(renderer.domElement);
+
+  scene=new THREE.Scene();
+  scene.fog=new THREE.Fog(0x123048, 34, 92);
+
+  camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,300);
+  camera.position.set(18,17,18);
+
+  controls=new OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true; controls.dampingFactor=.08;
+  controls.maxPolarAngle=Math.PI/2.15; controls.minDistance=8; controls.maxDistance=48;
+  controls.target.set(0,1,0);
+
+  // --- iluminação de fim de tarde (mais clara para revelar detalhe) ---
+  const hemi=new THREE.HemisphereLight(0xcfe2ff,0x4a6070,1.0); scene.add(hemi);
+  const sun=new THREE.DirectionalLight(0xffe3b0,1.7);
+  sun.position.set(-22,26,14); sun.castShadow=true;
+  sun.shadow.mapSize.set(2048,2048); sun.shadow.bias=-0.0004;
+  const d=30; Object.assign(sun.shadow.camera,{left:-d,right:d,top:d,bottom:-d,near:1,far:90});
+  scene.add(sun);
+  // preenchimento frontal suave (evita fachadas "chapadas" no escuro)
+  const fill=new THREE.DirectionalLight(0x9fc0e0,0.5); fill.position.set(16,10,20); scene.add(fill);
+  scene.add(new THREE.AmbientLight(0x5a7590,.55));
+
+  // céu (domo de cor sólida, tom de fim de tarde)
+  const skyGeo=new THREE.SphereGeometry(140,24,12);
+  scene.add(new THREE.Mesh(skyGeo,new THREE.MeshBasicMaterial({color:0x1a3a5c,side:THREE.BackSide})));
+
+  raycaster=new THREE.Raycaster();
+
+  // plano invisível para o raycast de colocação
+  ground=new THREE.Mesh(new THREE.PlaneGeometry(GRID*CELL,GRID*CELL),
+    new THREE.MeshBasicMaterial({visible:false}));
+  ground.rotation.x=-Math.PI/2; ground.position.y=0.01; scene.add(ground);
+
+  // ghost (pré-visualização holográfica)
+  ghost=new THREE.Mesh(new THREE.BoxGeometry(CELL*.9,CELL,CELL*.9),
+    new THREE.MeshBasicMaterial({color:0xffc24b,transparent:true,opacity:.35}));
+  ghost.visible=false; scene.add(ghost);
+
+  window.addEventListener('resize',onResize);
+  renderer.domElement.addEventListener('pointermove',onPointerMove);
+  renderer.domElement.addEventListener('pointerdown',onPointerDown,{capture:true});
+  window.addEventListener('pointerup',onPointerUp);
+  animate();
+}
+
+function buildTerrain(){
+  // limpa terreno anterior
+  const rm=[]; scene.traverse(o=>{if(o.userData.terrain)rm.push(o)}); rm.forEach(o=>scene.remove(o));
+  occupied={}; state.placements=[];
+
+  const t=state.terrain.tema;
+  const baseCol=new THREE.Color(t.ground);
+
+  // tabuleiro de blocos voxel (piso da gleba)
+  const gGeo=new THREE.BoxGeometry(CELL,1,CELL);
+  for(let ix=0;ix<GRID;ix++)for(let iz=0;iz<GRID;iz++){
+    const c=baseCol.clone().offsetHSL(0,0,(Math.random()-.5)*.06);
+    const m=new THREE.Mesh(gGeo,new THREE.MeshStandardMaterial({color:c,roughness:.95}));
+    m.position.set(-HALF+CELL/2+ix*CELL,-0.5,-HALF+CELL/2+iz*CELL);
+    m.receiveShadow=true; m.userData.terrain=true; scene.add(m);
+  }
+  // moldura / calçada
+  const frame=new THREE.Mesh(new THREE.BoxGeometry(GRID*CELL+2.2,0.6,GRID*CELL+2.2),
+    new THREE.MeshStandardMaterial({color:0x8b93a0,roughness:.9}));
+  frame.position.y=-0.8; frame.receiveShadow=true; frame.userData.terrain=true; scene.add(frame);
+
+  // via principal (asfalto) em uma borda
+  const road=new THREE.Mesh(new THREE.BoxGeometry(GRID*CELL+6,0.2,2.4),
+    new THREE.MeshStandardMaterial({color:0x2a3340,roughness:1}));
+  road.position.set(0,-0.7,HALF+3); road.receiveShadow=true; road.userData.terrain=true; scene.add(road);
+
+  // água (terreno natureza)
+  if(t.water){
+    const water=new THREE.Mesh(new THREE.BoxGeometry(GRID*CELL+16,0.2,7),
+      new THREE.MeshStandardMaterial({color:0x2f7fb0,roughness:.25,metalness:.3,transparent:true,opacity:.85}));
+    water.position.set(0,-0.75,-HALF-5); water.userData.terrain=true; scene.add(water);
+  }
+
+  // árvores ao redor
+  for(let i=0;i<t.trees;i++){
+    const ang=Math.random()*Math.PI*2, r=HALF+2.5+Math.random()*6;
+    addTree(Math.cos(ang)*r, Math.sin(ang)*r);
+  }
+  // silhuetas de prédios (entorno denso do centro)
+  if(t.dense){
+    for(let i=0;i<10;i++){
+      const ang=Math.random()*Math.PI*2, r=HALF+7+Math.random()*8, h=3+Math.random()*8;
+      const b=new THREE.Mesh(new THREE.BoxGeometry(2.2,h,2.2),
+        new THREE.MeshStandardMaterial({color:0x24405f,roughness:1}));
+      b.position.set(Math.cos(ang)*r,h/2-1,Math.sin(ang)*r); b.userData.terrain=true; scene.add(b);
+    }
+  }
+  controls.target.set(0,1,0);
+}
+
+function addTree(x,z){
+  const g=new THREE.Group();
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.14,.2,1.4,10),new THREE.MeshStandardMaterial({color:0x6b4b2a,roughness:1}));
+  trunk.position.y=.5;
+  const top=new THREE.Mesh(new THREE.IcosahedronGeometry(1.05,0),new THREE.MeshStandardMaterial({color:0x2f7d3e,roughness:.95}));
+  top.position.y=1.7; top.castShadow=true;
+  const top2=new THREE.Mesh(new THREE.IcosahedronGeometry(0.7,0),new THREE.MeshStandardMaterial({color:0x37984b,roughness:.95}));
+  top2.position.set(0.4,2.2,0.2); top2.castShadow=true;
+  g.add(trunk,top,top2); g.position.set(x,-1,z); g.userData.terrain=true; scene.add(g);
+}
+
+function cellKey(ix,iz){return ix+','+iz}
+function worldToCell(x,z){
+  const ix=Math.floor((x+HALF)/CELL), iz=Math.floor((z+HALF)/CELL);
+  return (ix<0||iz<0||ix>=GRID||iz>=GRID)?null:{ix,iz};
+}
+function cellToWorld(ix,iz){return {x:-HALF+CELL/2+ix*CELL, z:-HALF+CELL/2+iz*CELL}}
+
+/* =========================================================
+   BIBLIOTECA DE ITENS (modelos compostos, mais realistas)
+   Cada builder recebe o footprint f={w,d} (em células) e a
+   definição do item. Para criar um item novo a partir de um
+   prompt, basta escrever uma função builder e registrá-la em
+   BUILDERS (amenidades) — a fábrica makeItem cuida do resto.
+   ========================================================= */
+function mat(color,o={}){return new THREE.MeshStandardMaterial(Object.assign({color,roughness:.85,metalness:.05},o));}
+function box(w,h,d,color,o={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,o));m.castShadow=true;m.receiveShadow=true;return m;}
+function cyl(r1,r2,h,color,o={},seg=14){const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg),mat(color,o));m.castShadow=true;return m;}
+function blob(r,color,o={}){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,0),mat(color,Object.assign({roughness:.95},o)));m.castShadow=true;return m;}
+
+function lounger(){const g=new THREE.Group();
+  const seat=box(0.5,0.06,1.05,0xf2f2f2,{roughness:.7});seat.position.y=0.2;g.add(seat);
+  const back=box(0.5,0.06,0.5,0xf2f2f2,{roughness:.7});back.position.set(0,0.34,-0.42);back.rotation.x=-0.55;g.add(back);
+  [-0.2,0.2].forEach(x=>{const leg=cyl(0.02,0.02,0.2,0x999);leg.position.set(x,0.1,0.4);g.add(leg);});return g;}
+function umbrella(){const g=new THREE.Group();
+  const pole=cyl(0.03,0.03,1.5,0x8a6b40);pole.position.y=0.75;g.add(pole);
+  const top=cyl(0.7,0.06,0.32,0xE07A5F,{roughness:.7},12);top.position.y=1.4;g.add(top);return g;}
+function treeSmall(s=1){const g=new THREE.Group();
+  const t=cyl(0.09*s,0.13*s,0.75*s,0x6b4b2a);t.position.y=0.37*s;g.add(t);
+  const c1=blob(0.5*s,0x2f8f47);c1.position.y=0.95*s;g.add(c1);
+  const c2=blob(0.35*s,0x37a052);c2.position.set(0.25*s,1.15*s,0.1*s);g.add(c2);return g;}
+function bench(){const g=new THREE.Group();
+  const s=box(0.95,0.06,0.32,0x9a6b3f);s.position.y=0.3;g.add(s);
+  const b=box(0.95,0.3,0.06,0x9a6b3f);b.position.set(0,0.45,-0.13);g.add(b);
+  [-0.4,0.4].forEach(x=>{const leg=box(0.05,0.3,0.3,0x555);leg.position.set(x,0.15,0);g.add(leg);});return g;}
+
+/* --- prédios (todas as tipologias) --- */
+function bldRealistic(f,def){
+  const g=new THREE.Group();
+  const W=f.w*CELL*0.8, D=f.d*CELL*0.8, fh=0.92, floors=Math.max(3,def.h), H=floors*fh;
+  // térreo envidraçado (base iluminada)
+  const ground=box(W*1.05,fh*0.95,D*1.05,0x2b3440,{roughness:.8});ground.position.y=fh*0.47;g.add(ground);
+  const lobby=box(W*0.98,fh*0.55,D*0.98,0x121a22,{roughness:.1,metalness:.3,transparent:true,opacity:.85,emissive:0xffc27a,emissiveIntensity:.65});
+  lobby.position.y=fh*0.42;g.add(lobby);
+  // pavimentos: faixa de peitoril (cor) + faixa de vidro com brilho quente
+  for(let i=1;i<floors;i++){
+    const y=i*fh;
+    const sp=box(W,fh*0.5,D,def.cor,{roughness:.7});sp.position.y=y+fh*0.25;g.add(sp);
+    const glow=(i%2===0)?0.5:0.24;
+    const gl=box(W*1.006,fh*0.44,D*1.006,0x12212e,{roughness:.12,metalness:.4,transparent:true,opacity:.92,emissive:0xffc27a,emissiveIntensity:glow});
+    gl.position.y=y+fh*0.72;g.add(gl);
+  }
+  // MONTANTES VERTICAIS claros — quebram o volume de "caixa" (frente + laterais)
+  const nmul=Math.max(3,Math.round(W*2.2));
+  for(let m=0;m<nmul;m++){
+    const x=-W/2+m*(W/(nmul-1));
+    const mf=box(0.06,H*0.98,0.09,0xece7da,{roughness:.6});mf.position.set(x,fh+(H-fh)/2,D/2+0.02);g.add(mf);
+  }
+  [-1,1].forEach(sx=>{const side=box(0.09,H*0.98,0.06,0xece7da,{roughness:.6});side.position.set(sx*(W/2+0.02),fh+(H-fh)/2,0);g.add(side);});
+  // sacadas contínuas + guarda-corpo de vidro (fachada frontal)
+  for(let i=1;i<floors;i++){
+    const y=i*fh;
+    const bal=box(W*0.9,0.06,0.36,0xd9d2c2,{roughness:.8});bal.position.set(0,y+0.02,D/2+0.17);g.add(bal);
+    const rail=box(W*0.9,0.3,0.03,0x9fd3e6,{roughness:.05,metalness:.2,transparent:true,opacity:.3});rail.position.set(0,y+0.17,D/2+0.34);g.add(rail);
+  }
+  // COROAMENTO recuado (topo mais estreito) — quebra a silhueta reta
+  const crownH=fh*0.9;
+  const crown=box(W*0.68,crownH,D*0.68,0x2b3440,{roughness:.7});crown.position.y=H+crownH/2;g.add(crown);
+  const cg=box(W*0.64,crownH*0.6,D*0.64,0x121a22,{transparent:true,opacity:.85,emissive:0xffc27a,emissiveIntensity:.55});cg.position.y=H+crownH*0.45;g.add(cg);
+  const roof=box(W*0.72,0.12,D*0.72,0x8a94a0,{roughness:.9});roof.position.y=H+crownH+0.06;g.add(roof);
+  const cap=box(W*0.2,0.35,D*0.2,0xffc24b,{emissive:0x3a2c00});cap.position.y=H+crownH+0.25;g.add(cap);
+  return g;
+}
+
+/* --- casa (baixo, com telhado) --- */
+function bldHouse(f,def){
+  const g=new THREE.Group();
+  const W=f.w*CELL*0.68, D=f.d*CELL*0.68;
+  const body=box(W,0.95,D,0xeae3d4,{roughness:.9});body.position.y=0.475;g.add(body);
+  // telhado (pirâmide/hip)
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(W*0.64,0.6,4),mat(0x8a4636,{roughness:.85}));
+  roof.rotation.y=Math.PI/4;roof.position.y=0.95+0.3;roof.castShadow=true;g.add(roof);
+  // porta + janelas iluminadas
+  const door=box(0.26,0.5,0.05,0x5a3d28,{roughness:.7});door.position.set(-W*0.18,0.25,D/2+0.02);g.add(door);
+  const win=(x)=>{const w=box(0.3,0.3,0.05,0x1a2a33,{emissive:0xffc27a,emissiveIntensity:.55,transparent:true,opacity:.9});w.position.set(x,0.55,D/2+0.02);g.add(w);};
+  win(W*0.22);win(W*0.02);
+  // varanda pequena
+  const porch=box(W*0.5,0.06,0.3,0xcabea6,{roughness:.85});porch.position.set(-W*0.05,0.03,D/2+0.2);g.add(porch);
+  // jardim
+  const t=treeSmall(0.7);t.position.set(W*0.62,0,D*0.55);g.add(t);
+  const hedge=box(W*0.9,0.18,0.16,0x3f8f4a,{roughness:1});hedge.position.set(0,0.09,D/2+0.36);g.add(hedge);
+  return g;
+}
+
+/* --- piscina (exemplo detalhado) --- */
+function bldPool(f){
+  const g=new THREE.Group();
+  const W=f.w*CELL*0.92, D=f.d*CELL*0.92;
+  const deck=box(W,0.3,D,0xd8cbb0,{roughness:.95});deck.position.y=0.15;g.add(deck);
+  const wW=W*0.6, wD=D*0.6;
+  const basin=box(wW+0.12,0.34,wD+0.12,0x0a3550,{roughness:.4});basin.position.y=0.16;g.add(basin);
+  const water=box(wW,0.3,wD,0x2E8BC0,{roughness:.1,metalness:.4,transparent:true,opacity:.85,emissive:0x14405c,emissiveIntensity:.3});
+  water.position.y=0.22;g.add(water);
+  // loungers
+  for(let i=0;i<2;i++){const l=lounger();l.position.set(-W/2+0.45,0.3,-D/4+i*D/2);l.rotation.y=Math.PI/2;g.add(l);}
+  // guarda-sol
+  const u=umbrella();u.position.set(W/2-0.5,0.3,0);g.add(u);
+  // escada (corrimão metálico)
+  [-0.15,0.15].forEach(x=>{const r=cyl(0.03,0.03,0.6,0xcfd6dd,{metalness:.8,roughness:.3});r.position.set(x,0.4,wD/2+0.05);g.add(r);});
+  return g;
+}
+
+/* --- horta urbana --- */
+function bldGarden(f){
+  const g=new THREE.Group();
+  const W=f.w*CELL*0.9, D=f.d*CELL*0.9;
+  const soil=box(W,0.2,D,0x5a3d28,{roughness:1});soil.position.y=0.1;g.add(soil);
+  const rows=Math.max(2,Math.round(D/0.75));
+  for(let r=0;r<rows;r++){
+    const z=-D/2+(r+0.5)*(D/rows);
+    const bed=box(W*0.85,0.16,(D/rows)*0.55,0x6b4b2a,{roughness:1});bed.position.set(0,0.22,z);g.add(bed);
+    const n=Math.max(3,Math.round(W/0.5));
+    for(let i=0;i<n;i++){const x=-W*0.4+i*(W*0.8/Math.max(1,n-1));const p=blob(0.11,0x4fae55);p.position.set(x,0.34,z);g.add(p);}
+  }
+  return g;
+}
+
+/* --- praça arborizada --- */
+function bldPlaza(f){
+  const g=new THREE.Group();
+  const W=f.w*CELL*0.94, D=f.d*CELL*0.94;
+  const pave=box(W,0.14,D,0xbfc2c7,{roughness:.95});pave.position.y=0.07;g.add(pave);
+  const inlay=box(W*0.5,0.15,D*0.5,0x9aa0a6,{roughness:.9});inlay.position.y=0.075;g.add(inlay);
+  const t=treeSmall(1.2);t.position.set(0,0.14,0);g.add(t);
+  const b1=bench();b1.position.set(-W*0.28,0.14,D*0.28);b1.rotation.y=0.6;g.add(b1);
+  const b2=bench();b2.position.set(W*0.28,0.14,-D*0.28);b2.rotation.y=Math.PI+0.6;g.add(b2);
+  return g;
+}
+
+/* --- quadra esportiva --- */
+function bldCourt(f){
+  const g=new THREE.Group();
+  const W=f.w*CELL*0.94, D=f.d*CELL*0.94;
+  const surf=box(W,0.12,D,0x2e6f4e,{roughness:.9});surf.position.y=0.06;g.add(surf);
+  const line=(w,d,x,z)=>{const l=box(w,0.13,d,0xffffff,{roughness:.6});l.position.set(x,0.065,z);g.add(l);};
+  line(W*0.9,0.05,0,0);
+  line(W*0.92,0.05,0,-D*0.45);line(W*0.92,0.05,0,D*0.45);
+  line(0.05,D*0.92,-W*0.45,0);line(0.05,D*0.92,W*0.45,0);
+  [-1,1].forEach(s=>{const p=cyl(0.05,0.05,1.0,0x888,{metalness:.6,roughness:.4});p.position.set(0,0.5,s*D*0.4);g.add(p);});
+  const net=box(W*0.86,0.5,0.02,0xffffff,{transparent:true,opacity:.25});net.position.y=0.55;g.add(net);
+  return g;
+}
+
+/* --- pavilhão de vidro (amenidades construídas: academia, coworking, etc.) --- */
+function bldPavilion(f,def){
+  const g=new THREE.Group();
+  const W=f.w*CELL*0.86, D=f.d*CELL*0.86, H=1.5;
+  const base=box(W,0.2,D,0xcfc7b5,{roughness:.95});base.position.y=0.1;g.add(base);
+  const band=box(W*0.94,0.28,D*0.94,def.cor,{roughness:.5});band.position.y=0.22;g.add(band);
+  const glass=box(W*0.88,H,D*0.88,0x9fd3e6,{roughness:.06,metalness:.3,transparent:true,opacity:.5,emissive:0x274b5c,emissiveIntensity:.35});
+  glass.position.y=0.22+H/2;g.add(glass);
+  // montantes verticais
+  [-1,1].forEach(sx=>[-1,1].forEach(sz=>{const c=box(0.08,H,0.08,0xeef2f6,{metalness:.5,roughness:.4});c.position.set(sx*W*0.42,0.22+H/2,sz*D*0.42);g.add(c);}));
+  const roof=box(W*1.04,0.18,D*1.04,def.cor,{roughness:.5});roof.position.y=0.22+H;g.add(roof);
+  // totem/sinal com a cor do item
+  const pole=cyl(0.04,0.04,1.1,0x666,{metalness:.5});pole.position.set(W/2-0.15,0.75,D/2-0.15);g.add(pole);
+  const sign=box(0.55,0.3,0.06,def.cor,{emissive:new THREE.Color(def.cor).multiplyScalar(.35)});sign.position.set(W/2-0.15,1.35,D/2-0.15);g.add(sign);
+  return g;
+}
+
+/* --- torre residencial premium (inspirada na referência "smart living")
+   Sacadas contínuas com guarda-corpo de vidro, aletas de bronze,
+   spandrel bege, base iluminada com ripado + placa, coroamento com
+   sky garden. Modelo procedural estilizado (não é o render real). --- */
+function bldTowerPremium(f,def){
+  const g=new THREE.Group();
+  const W=f.w*CELL*0.72, D=f.d*CELL*0.72;
+  const podH=1.0, podFloors=2, podTop=podH*podFloors;
+  const fh=0.8, floors=16;
+
+  // ----- BASE (podium) -----
+  const pod=box(W*1.28,podTop,D*1.28,0x2a2622,{roughness:.75,metalness:.1});pod.position.y=podTop/2;g.add(pod);
+  const lobby=box(W*1.2,podH*0.7,D*1.2,0x120e0a,{roughness:.1,metalness:.3,transparent:true,opacity:.85,emissive:0xffb055,emissiveIntensity:.7});
+  lobby.position.y=podH*0.42;g.add(lobby);
+  // ripado de madeira no térreo
+  const nslat=Math.max(6,Math.round(W*4));
+  for(let i=0;i<nslat;i++){const x=-W*0.55+i*(W*1.1/(nslat-1));
+    const slat=box(0.05,podTop*0.8,0.04,0x6e4a2c,{roughness:.8});slat.position.set(x,podTop*0.55,D*0.64);g.add(slat);}
+  // placa de assinatura retroiluminada
+  const plaqueEdge=box(W*0.54,podH*0.54,0.04,0xB08D57,{metalness:.7,roughness:.3,emissive:0x3a2a14,emissiveIntensity:.4});
+  plaqueEdge.position.set(0,podTop*0.62,D*0.645);g.add(plaqueEdge);
+  const plaque=box(W*0.5,podH*0.5,0.06,0x14110e,{roughness:.5,metalness:.2,emissive:0x241a10,emissiveIntensity:.5});
+  plaque.position.set(0,podTop*0.62,D*0.66);g.add(plaque);
+  const podCap=box(W*1.32,0.14,D*1.32,0x3a352f,{roughness:.7});podCap.position.y=podTop+0.07;g.add(podCap);
+  // paisagismo na base
+  const t1=treeSmall(0.9);t1.position.set(-W*0.85,0,D*0.95);g.add(t1);
+  const t2=treeSmall(0.8);t2.position.set(W*0.9,0,D*0.9);g.add(t2);
+
+  // ----- CORPO (shaft) -----
+  const shaftBase=podTop+0.14;
+  for(let i=0;i<floors;i++){
+    const y=shaftBase+i*fh;
+    // spandrel bege
+    const sp=box(W,fh*0.42,D,0xd8cfc0,{roughness:.85});sp.position.y=y+fh*0.21;g.add(sp);
+    // vidro com brilho quente interno (alguns pavimentos mais acesos)
+    const glow=(i%3===0)?0.55:(i%2===0?0.3:0.15);
+    const gl=box(W*0.98,fh*0.5,D*0.98,0x14181d,{roughness:.1,metalness:.4,transparent:true,opacity:.9,emissive:0xffb964,emissiveIntensity:glow});
+    gl.position.y=y+fh*0.68;g.add(gl);
+    // laje de sacada + guarda-corpo de vidro (fachada frontal)
+    const bal=box(W*0.92,0.06,0.42,0xcfc6b6,{roughness:.8});bal.position.set(0,y+fh*0.42,D/2+0.2);g.add(bal);
+    const rail=box(W*0.92,0.34,0.03,0x9fd3e6,{roughness:.05,metalness:.2,transparent:true,opacity:.32});rail.position.set(0,y+fh*0.6,D/2+0.4);g.add(rail);
+    const railTop=box(W*0.92,0.03,0.05,0x8a5a2e,{metalness:.7,roughness:.35});railTop.position.set(0,y+fh*0.77,D/2+0.4);g.add(railTop);
+  }
+  const shaftTop=shaftBase+floors*fh;
+  // aletas verticais de bronze (borda esquerda, altura total)
+  for(let k=0;k<3;k++){const fin=box(0.08,floors*fh,0.28,0x8a5a2e,{metalness:.6,roughness:.4});
+    fin.position.set(-W/2-0.02,shaftBase+floors*fh/2,-D*0.3+k*D*0.3);g.add(fin);}
+
+  // ----- COROAMENTO / SKY GARDEN -----
+  const crownH=fh*1.6;
+  const crown=box(W*0.9,crownH,D*0.9,0x241f1a,{roughness:.7});crown.position.y=shaftTop+crownH/2;g.add(crown);
+  const cg=box(W*0.86,crownH*0.5,D*0.86,0x120e0a,{transparent:true,opacity:.85,emissive:0xffb055,emissiveIntensity:.5});cg.position.y=shaftTop+crownH*0.4;g.add(cg);
+  // pergolado de bronze (aberto)
+  const frameY=shaftTop+crownH;
+  const frTop=box(W*1.1,0.08,D*1.1,0x8a5a2e,{metalness:.6,roughness:.4});frTop.position.y=frameY+0.5;g.add(frTop);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{const col=box(0.08,0.5,0.08,0x8a5a2e,{metalness:.6,roughness:.4});col.position.set(sx*W*0.5,frameY+0.25,sz*D*0.5);g.add(col);});
+  // vegetação do terraço
+  for(let i=0;i<5;i++){const p=blob(0.16+Math.random()*0.08,0x3f9e55);p.position.set((Math.random()-0.5)*W*0.7,shaftTop+crownH+0.1,(Math.random()-0.5)*D*0.7);g.add(p);}
+
+  return g;
+}
+
+/* Registro de builders especiais por id (amenidades).
+   Itens não listados usam o pavilhão de vidro genérico. */
+const BUILDERS = {
+  casas:   bldHouse,
+  piscina: bldPool,
+  horta:   bldGarden,
+  praca:   bldPlaza,
+  quadra:  bldCourt,
+  torre_premium: bldTowerPremium,
+  // >>> novos itens criados por prompt entram aqui, ex.:
+  // rooftop: bldRooftop,
+};
+
+// Fábrica: decide qual modelo construir (builder específico > genérico)
+function makeItem(kind, def, f){
+  const fn = BUILDERS[def.id];
+  if(fn) return fn(f,def);
+  return kind==='tipologia' ? bldRealistic(f,def) : bldPavilion(f,def);
+}
+
+function placeRect(r){
+  if(!selectedModule) return false;
+  r=clampRect(r);
+  const def=selectedModule.def;
+  const cells=footprintCells(r.ix,r.iz,r.w,r.d);
+  if(!footprintValid(cells)) return false;         // fora dos limites ou sobreposto
+  const area=r.w*r.d, cost=sizeCostArea(def,area);
+  if(state.budgetLeft<cost){ flashBudget(); return false; }
+  const f={w:r.w,d:r.d};
+  const c=footprintCenterWorld(r.ix,r.iz,r.w,r.d);
+  const mesh=makeItem(selectedModule.kind,def,f);
+  mesh.position.set(c.x,0,c.z); scene.add(mesh);
+  const keys=cells.map(([x,z])=>cellKey(x,z));
+  const size={w:r.w,d:r.d,area,cost};
+  const p={kind:selectedModule.kind,id:def.id,keys,mesh,size};
+  keys.forEach(k=>occupied[k]=p);
+  state.placements.push(p);
+  state.budgetLeft-=cost; updateBudgetUI();
+  logEvent('item_added',{kind:p.kind,id:p.id,w:r.w,d:r.d,area,cost});
+  logEvent('sequence',{action:'place',id:p.id,area,index:state.placements.length});
+  beep(520,.05);
+  return true;
+}
+function undo(){
+  const p=state.placements.pop(); if(!p) return;
+  scene.remove(p.mesh); p.keys.forEach(k=>delete occupied[k]);
+  state.budgetLeft+=p.size.cost; updateBudgetUI();
+  logEvent('item_removed',{kind:p.kind,id:p.id,area:p.size.area});
+  beep(300,.05);
+}
+
+function onResize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
+
+// converte evento em célula do terreno (ou null se fora)
+function cellFromEvent(e){
+  const m=ndc(e); raycaster.setFromCamera(m,camera);
+  const hit=raycaster.intersectObject(ground)[0]; if(!hit) return null;
+  return worldToCell(hit.point.x,hit.point.z);
+}
+let sizing=false, dragStart=null;
+function showGhostRect(r){
+  r=clampRect(r);
+  const cells=footprintCells(r.ix,r.iz,r.w,r.d);
+  const area=r.w*r.d;
+  const valid=footprintValid(cells) && (!selectedModule || state.budgetLeft>=sizeCostArea(selectedModule.def,area));
+  const c=footprintCenterWorld(r.ix,r.iz,r.w,r.d);
+  ghost.scale.set(r.w,1,r.d);
+  ghost.position.set(c.x,1,c.z);
+  ghost.material.color.setHex(valid?0x2fbf6b:0xff5a5a);
+  ghost.material.opacity=valid?0.34:0.26;
+  ghost.visible=true;
+  // leitura ao vivo
+  const el=document.getElementById('sizeCost');
+  if(el && selectedModule) el.textContent=`${r.w}×${r.d} · área ${area} · ${sizeCostArea(selectedModule.def,area)} cr`;
+}
+function onPointerMove(e){
+  if(modeWalk||!selectedModule){ghost.visible=false;return;}
+  const c=cellFromEvent(e);
+  if(sizing && dragStart){ if(c) showGhostRect(rectFrom(dragStart,c)); return; }
+  if(!c){ghost.visible=false;return;}
+  showGhostRect({ix:c.ix,iz:c.iz,w:1,d:1});     // prévia 1×1 antes de arrastar
+}
+function onPointerDown(e){
+  if(modeWalk||!selectedModule) return;           // sem item: OrbitControls orbita normalmente
+  const c=cellFromEvent(e); if(!c) return;         // clique fora do terreno → deixa orbitar
+  e.stopImmediatePropagation(); e.preventDefault(); // impede a câmera de girar durante o arraste
+  sizing=true; dragStart=c; controls.enabled=false;
+  showGhostRect(rectFrom(c,c));
+}
+function onPointerUp(e){
+  if(!sizing) return;
+  sizing=false; controls.enabled=true;
+  const start=dragStart; dragStart=null;
+  if(!start) return;
+  const c=cellFromEvent(e)||start;
+  placeRect(rectFrom(start,c));
+  ghost.visible=false;
+}
+function ndc(e){const r=renderer.domElement.getBoundingClientRect();
+  return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);}
+
+/* ---- modo visitar (1ª/3ª pessoa) ---- */
+function setupAvatar(){
+  if(avatar) return;
+  avatar=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,1.4,10),
+    new THREE.MeshStandardMaterial({color:0xffc24b,emissive:0x332200}));
+  body.position.y=.7; const head=new THREE.Mesh(new THREE.SphereGeometry(.32,12,10),
+    new THREE.MeshStandardMaterial({color:0xeaf1f8})); head.position.y=1.6;
+  avatar.add(body,head); avatar.position.set(0,-1,HALF+1); scene.add(avatar);
+}
+let yaw=Math.PI, pitch=-0.1, dragging=false, lastX=0,lastY=0;
+function enterWalk(){
+  modeWalk=true; controls.enabled=false; setupAvatar();
+  document.getElementById('crosshair').style.display=thirdPerson?'none':'block';
+  ghost.visible=false;
+  renderer.domElement.style.cursor='grab';
+  addWalkListeners();
+  logEvent('sequence',{action:'enter_walk'});
+}
+function exitWalk(){
+  modeWalk=false; controls.enabled=true;
+  document.getElementById('crosshair').style.display='none';
+  renderer.domElement.style.cursor='default';
+}
+function addWalkListeners(){
+  if(listenerAdded) return; listenerAdded=true;
+  addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;});
+  addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+  renderer.domElement.addEventListener('mousedown',e=>{if(modeWalk){dragging=true;lastX=e.clientX;lastY=e.clientY;}});
+  addEventListener('mouseup',()=>dragging=false);
+  addEventListener('mousemove',e=>{ if(!modeWalk||!dragging)return;
+    yaw-=(e.clientX-lastX)*0.004; pitch-=(e.clientY-lastY)*0.004;
+    pitch=Math.max(-0.8,Math.min(0.4,pitch)); lastX=e.clientX; lastY=e.clientY; });
+}
+function updateWalk(dt){
+  if(!modeWalk) return;
+  const spd=6*dt; const fx=Math.sin(yaw), fz=Math.cos(yaw);
+  let mx=0,mz=0;
+  if(keys['w']){mx-=fx;mz-=fz;} if(keys['s']){mx+=fx;mz+=fz;}
+  if(keys['a']){mx-=fz;mz+=fx;} if(keys['d']){mx+=fz;mz-=fx;}
+  const len=Math.hypot(mx,mz)||1;
+  avatar.position.x=THREE.MathUtils.clamp(avatar.position.x+mx/len*spd,-HALF-4,HALF+4);
+  avatar.position.z=THREE.MathUtils.clamp(avatar.position.z+mz/len*spd,-HALF-8,HALF+4);
+  avatar.rotation.y=yaw;
+  const eye=avatar.position.clone(); eye.y+= thirdPerson?2.6:1.6;
+  if(thirdPerson){
+    camera.position.set(eye.x+Math.sin(yaw)*6, eye.y+1.5, eye.z+Math.cos(yaw)*6);
+    camera.lookAt(avatar.position.x,avatar.position.y+1.4,avatar.position.z);
+  }else{
+    camera.position.copy(eye);
+    const dir=new THREE.Vector3(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
+    camera.lookAt(eye.clone().add(dir));
+  }
+}
+
+let last=performance.now();
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now(), dt=Math.min(.05,(now-last)/1000); last=now;
+  if(modeWalk) updateWalk(dt); else controls.update();
+  if(ghost.visible) ghost.rotation.y+=dt*1.2;
+  renderer.render(scene,camera);
+}
+
+/* ---- áudio simples ---- */
+let actx=null;
+function beep(freq=440,dur=.06){
+  if(state.muted) return;
+  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.frequency.value=freq;o.type='sine';o.connect(g);g.connect(actx.destination);
+    g.gain.setValueAtTime(.06,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+dur);
+    o.start();o.stop(actx.currentTime+dur);
+  }catch(_){}
+}
+function flashBudget(){const el=document.querySelector('.budget');el.animate([{filter:'none'},{filter:'brightness(1.8) drop-shadow(0 0 8px #F5A623)'},{filter:'none'}],{duration:400});beep(180,.12);}
+function tone(freq,dur,type='sine',vol=.05,delay=0){
+  if(state.muted) return;
+  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const t0=actx.currentTime+delay; const o=actx.createOscillator(),g=actx.createGain();
+    o.frequency.value=freq;o.type=type;o.connect(g);g.connect(actx.destination);
+    g.gain.setValueAtTime(vol,t0); g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+    o.start(t0);o.stop(t0+dur);
+  }catch(_){}
+}
+function chime(){ tone(660,.12,'sine',.05,0); tone(990,.16,'sine',.045,.08); }      // pop social
+function arp(){ [523,659,784,1046].forEach((f,i)=>tone(f,.18,'triangle',.05,i*.07)); } // sucesso
+function tick(){ tone(720,.04,'square',.03,0); }                                       // likert/stepper
+
+/* =========================================================
+   5. UI — navegação entre telas
+   ========================================================= */
+const SCREENS=['start','role','terrain','concept','params','attrs','likert','compare','result','dash'];
+function show(name){
+  SCREENS.forEach(s=>document.getElementById('s-'+s).classList.add('hidden'));
+  document.getElementById('hud').classList.add('hidden');
+  if(name==='build'){ document.getElementById('hud').classList.remove('hidden'); renderSteps(4); }
+  else if(name){ document.getElementById('s-'+name).classList.remove('hidden'); }
+}
+function renderSteps(active){
+  const labels=['Terreno','Conceito','Parâmetros','Construir','Atributos','Importância','Comparar','Resultado'];
+  const el=document.getElementById('steps'); el.innerHTML='';
+  labels.forEach((l,i)=>{
+    const st=document.createElement('div');
+    st.className='st'+(i+1===active?' on':(i+1<active?' done':''));
+    st.innerHTML=`<b>${i+1}</b>${l}`;
+    el.appendChild(st);
+    if(i<labels.length-1){const a=document.createElement('span');a.className='arr';a.textContent='›';el.appendChild(a);}
+  });
+}
+
+/* ---------- START ---------- */
+function updateResearchPill(){
+  const p=document.getElementById('researchPill');
+  const on = state.consent || state.demo;
+  p.className='pill panel '+(on?'on':'off');
+  const label = state.consent ? 'pesquisa: ativa ●' : (state.demo ? 'demonstração: ativa ●' : 'registro: desativado ○');
+  p.innerHTML=`<span>${label}</span>`;
+}
+document.getElementById('consentBox').addEventListener('change',e=>{ state.consent=e.target.checked; updateResearchPill(); });
+document.getElementById('demoBox').addEventListener('change',e=>{ state.demo=e.target.checked; updateResearchPill(); });
+document.getElementById('btnStart').addEventListener('click',()=>{
+  logEvent('sequence',{action:'start'}); markStep('start');
+  buildRoleScreen(); show('role');
+});
+document.getElementById('btnExplore').addEventListener('click',()=>{ renderDashboard(); show('dash'); });
+
+// voltar genérico
+document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.goto)));
+
+/* ---------- ONBOARDING: AVATAR + PAPEL ---------- */
+const AVATAR_COLORS=['#2E75B6','#F5A623','#2F9E5B','#7C5CBF','#E07A5F','#3EA7D6'];
+function refreshAvatarPreview(){
+  const pv=document.getElementById('avatarPreview');
+  pv.textContent = state.role ? state.role.emoji : '🙂';
+  pv.style.background = state.avatar.color;
+  pv.style.color='#0b1e33';
+}
+function buildRoleScreen(){
+  // swatches de cor
+  const sw=document.getElementById('avatarSwatches'); sw.innerHTML='';
+  AVATAR_COLORS.forEach(c=>{const b=document.createElement('div');b.className='sc'+(state.avatar.color===c?' on':'');b.style.background=c;
+    b.onclick=()=>{state.avatar.color=c;[...sw.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');refreshAvatarPreview();tick();};
+    sw.appendChild(b);});
+  // cards de papel
+  const wrap=document.getElementById('roleCards'); wrap.innerHTML='';
+  ROLES.forEach(r=>{
+    const c=document.createElement('button'); c.className='choice'+(state.role&&state.role.id===r.id?' sel':'');
+    c.innerHTML=`<span class="ic">${r.emoji}</span><h4>${r.nome}</h4><p>${r.desc}</p>`;
+    c.onclick=()=>{
+      state.role=r; document.querySelectorAll('#roleCards .choice').forEach(x=>x.classList.remove('sel')); c.classList.add('sel');
+      document.getElementById('roleBrief').style.display='block';
+      document.getElementById('roleBriefRole').textContent='Seu papel · '+r.nome;
+      document.getElementById('roleBriefObj').textContent='🎯 '+r.obj;
+      document.getElementById('roleBriefInstr').textContent=r.instr;
+      document.getElementById('roleNext').disabled=false;
+      refreshAvatarPreview(); tick();
+      logEvent('role_chosen',{role:r.id});
+    };
+    wrap.appendChild(c);
+  });
+  document.getElementById('avatarName').value=state.avatar.name||'';
+  refreshAvatarPreview();
+}
+document.getElementById('avatarName').addEventListener('input',e=>{ state.avatar.name=e.target.value.trim(); });
+document.getElementById('roleNext').addEventListener('click',()=>{
+  if(!state.role) return;
+  logEvent('avatar_created',{name:state.avatar.name||'(anônimo)',color:state.avatar.color,role:state.role.id});
+  markStep('onboarding'); buildTerrainCards(); show('terrain');
+});
+
+/* ---------- TERRENO ---------- */
+function buildTerrainCards(){
+  const wrap=document.getElementById('terrainCards'); wrap.innerHTML='';
+  TERRAINS.forEach(t=>{
+    const c=document.createElement('button'); c.className='choice';
+    c.innerHTML=`<span class="ic">${t.ic}</span><h4>${t.nome}</h4><p>${t.desc}</p>
+      <div class="meta">Custo da terra: ${t.land} · Orçamento: ${t.bud} créditos</div>`;
+    c.onclick=()=>{ document.querySelectorAll('#terrainCards .choice').forEach(x=>x.classList.remove('sel'));
+      c.classList.add('sel'); state.terrain=t;
+      document.getElementById('terrainNext').disabled=false;
+      logEvent('alternative_viewed',{category:'localizacao',id:t.id}); };
+    wrap.appendChild(c);
+  });
+}
+document.getElementById('terrainNext').addEventListener('click',()=>{
+  logEvent('alternative_selected',{category:'localizacao',id:state.terrain.id}); markStep('terreno');
+  buildConceptCards(); show('concept');
+});
+
+/* ---------- CONCEITO ---------- */
+function buildConceptCards(){
+  const wrap=document.getElementById('conceptCards'); wrap.innerHTML='';
+  CONCEPTS.forEach(t=>{
+    const c=document.createElement('button'); c.className='choice';
+    c.innerHTML=`<span class="ic">${t.ic}</span><h4>${t.nome}</h4><p>${t.desc}</p>`;
+    c.onclick=()=>{ document.querySelectorAll('#conceptCards .choice').forEach(x=>x.classList.remove('sel'));
+      c.classList.add('sel'); state.concept=t;
+      document.getElementById('conceptNext').disabled=false;
+      logEvent('alternative_viewed',{category:'conceito',id:t.id}); };
+    wrap.appendChild(c);
+  });
+}
+document.getElementById('conceptNext').addEventListener('click',()=>{
+  logEvent('alternative_selected',{category:'conceito',id:state.concept.id}); markStep('conceito');
+  buildParams(); show('params');
+});
+
+/* ---------- PARÂMETROS ---------- */
+const TYP_OPTS=[{id:'studio',nome:'Studio / 1 dorm'},{id:'2q',nome:'2 dormitórios'},{id:'3q',nome:'3+ dormitórios'},{id:'flex',nome:'Flexível'}];
+function m2Tag(v){ return v<45?'compacto':v<75?'médio':v<110?'amplo':'premium'; }
+function renderTowersDots(){
+  const el=document.getElementById('towersDots'); el.innerHTML='';
+  for(let i=1;i<=4;i++){const d=document.createElement('div');d.className='dot'+(i<=state.params.towers?' on':'');d.textContent=i;el.appendChild(d);}
+  document.getElementById('towersVal').textContent=state.params.towers;
+}
+function buildParams(){
+  if(!state.params) state.params={towers:2,m2:65,typ:'2q'};
+  renderTowersDots();
+  document.getElementById('m2Range').value=state.params.m2;
+  document.getElementById('m2Val').textContent=state.params.m2+' m²';
+  document.getElementById('m2Tag').textContent=m2Tag(state.params.m2);
+  const wrap=document.getElementById('typChips'); wrap.innerHTML='';
+  TYP_OPTS.forEach(t=>{const b=document.createElement('button');b.className='chip'+(state.params.typ===t.id?' on':'');b.textContent=t.nome;
+    b.onclick=()=>{state.params.typ=t.id;[...wrap.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');tick();logEvent('category_chosen',{category:'planta',id:t.id});};
+    wrap.appendChild(b);});
+}
+document.getElementById('towersMinus').addEventListener('click',()=>{state.params.towers=Math.max(1,state.params.towers-1);renderTowersDots();tick();});
+document.getElementById('towersPlus').addEventListener('click',()=>{state.params.towers=Math.min(4,state.params.towers+1);renderTowersDots();tick();});
+document.getElementById('m2Range').addEventListener('input',e=>{state.params.m2=+e.target.value;document.getElementById('m2Val').textContent=state.params.m2+' m²';document.getElementById('m2Tag').textContent=m2Tag(state.params.m2);});
+document.getElementById('paramsNext').addEventListener('click',()=>{
+  logEvent('param_set',{towers:state.params.towers,m2:state.params.m2,typ:state.params.typ});
+  markStep('parametros'); startBuild();
+});
+
+/* ---------- CONSTRUÇÃO ---------- */
+function startBuild(){
+  state.budgetTotal=state.terrain.bud; state.budgetLeft=state.terrain.bud;
+  // objetivo guiado pelo papel escolhido (fallback: missão aleatória)
+  if(state.role){ state.mission={id:'role_'+state.role.id, txt:state.role.obj}; }
+  else { state.mission=MISSIONS[Math.floor(Math.random()*MISSIONS.length)]; }
+  const meta = state.params ? ` · meta: ${state.params.towers} torre(s), ~${state.params.m2} m²` : '';
+  document.getElementById('missionText').textContent=state.mission.txt+meta;
+  document.getElementById('budgetTotal').textContent=state.budgetTotal;
+  updateResearchPill();
+  // avatar no HUD
+  if(state.role){
+    const ap=document.getElementById('avatarPill'); ap.style.display='';
+    ap.innerHTML=`<span>${state.role.emoji} ${state.avatar.name||'você'} · ${state.role.nome}</span>`;
+  }
+  buildTerrain(); renderModList('tipologia'); updateBudgetUI();
+  selectedModule=null; updateSizeUI();
+  show('build');
+  startSocial();
+  logEvent('sequence',{action:'begin_build',mission:state.mission.id});
+}
+
+/* ---------- CAMADA SOCIAL (participantes simulados) ---------- */
+let socialTimer=null, liveTimer=null, peerIdx=0;
+function findDef(id){ return [...TIPOLOGIAS,...AMENIDADES].find(x=>x.id===id); }
+function findAttr(id){ for(const g of ATTR_GROUPS){const it=g.items.find(i=>i.id===id); if(it)return it;} return null; }
+function idLabel(id){ const d=findDef(id); if(d)return d.nome; const a=findAttr(id); if(a)return a.nome; return id; }
+function catColor(id){ const d=findDef(id); return d?d.cor:'#9AA5B1'; }
+function userChoiceSet(){
+  const s=new Set();
+  state.placements.forEach(p=>s.add(p.id));
+  state.attrs.forEach(a=>s.add(a));
+  return s;
+}
+function updateLive(){
+  const n=3+Math.floor(Math.random()*10);
+  const el=document.getElementById('livePill');
+  if(el) el.innerHTML=`<span>● ${n} projetando agora</span>`;
+}
+function showPeerToast(){
+  const hud=document.getElementById('hud'); if(!hud || hud.classList.contains('hidden')) return;
+  const cont=document.getElementById('peerToasts'); if(!cont) return;
+  const peer=PEERS[peerIdx%PEERS.length]; peerIdx++;
+  const mine=userChoiceSet();
+  const common=peer.wants.filter(id=>mine.has(id)).map(idLabel);
+  const el=document.createElement('div'); el.className='peer';
+  const commonHTML = common.length
+    ? `<div class="pcommon">✓ Em comum com você: ${common.join(', ')}</div>`
+    : `<div class="pcommon" style="color:var(--texto-sec)">Ainda sem escolhas em comum — construa mais para descobrir.</div>`;
+  el.innerHTML=`<div class="av" style="background:${peer.tag}">${peer.n[0]}</div>
+    <div class="pbody"><b>${peer.n}, ${peer.age}</b> também quer morar num bairro assim.
+    ${commonHTML}
+    <div class="react"><button data-r="like">👍 Curtir</button><button data-r="ver">Ver o que escolheu</button></div></div>`;
+  cont.appendChild(el);
+  chime();
+  logEvent('peer_shown',{peer:peer.n,common});
+  el.querySelector('[data-r="like"]').onclick=()=>{ tick(); logEvent('peer_react',{peer:peer.n,react:'like'}); el.querySelector('[data-r="like"]').textContent='👍 Curtido'; };
+  el.querySelector('[data-r="ver"]').onclick=()=>{ tick(); logEvent('peer_react',{peer:peer.n,react:'ver'});
+    el.querySelector('.pcommon').textContent='Ela priorizou: '+peer.wants.map(idLabel).join(', '); };
+  // auto-remover
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),350); }, 9000);
+  // limita a 3 na tela
+  while(cont.children.length>3) cont.firstChild.remove();
+}
+function startSocial(){
+  stopSocial();
+  updateLive();
+  liveTimer=setInterval(updateLive,4500);
+  setTimeout(showPeerToast,5000);
+  socialTimer=setInterval(showPeerToast,17000);
+}
+function stopSocial(){
+  if(socialTimer)clearInterval(socialTimer); if(liveTimer)clearInterval(liveTimer);
+  socialTimer=liveTimer=null;
+  const cont=document.getElementById('peerToasts'); if(cont) cont.innerHTML='';
+}
+function renderModList(cat){
+  const list=cat==='tipologia'?TIPOLOGIAS:AMENIDADES;
+  const el=document.getElementById('modList'); el.innerHTML='';
+  list.forEach(def=>{
+    const d=document.createElement('div'); d.className='mod'+(def.featured?' featured':'');
+    d.innerHTML=`<span class="sw" style="background:${def.cor}"></span>
+      <span class="nm">${def.featured?'★ ':''}${def.nome}</span><span class="ct">${def.cost}</span>`;
+    d.onclick=()=>{ document.querySelectorAll('.mod').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel'); selectedModule={kind:cat,def};
+      updateSizeUI();
+      logEvent('category_chosen',{category:cat,id:def.id}); };
+    el.appendChild(d);
+  });
+}
+document.querySelectorAll('.dock .tab').forEach(tab=>tab.addEventListener('click',()=>{
+  document.querySelectorAll('.dock .tab').forEach(t=>t.classList.remove('sel'));
+  tab.classList.add('sel'); selectedModule=null; renderModList(tab.dataset.cat); updateSizeUI();
+}));
+
+/* ---------- controle de tamanho (agora por arraste) ---------- */
+function updateSizeUI(){
+  const el=document.getElementById('sizeCost'); if(!el) return;
+  el.textContent = selectedModule ? 'arraste no terreno →' : 'selecione um item';
+}
+function updateBudgetUI(){
+  document.getElementById('budgetLeft').textContent=state.budgetLeft;
+  const pct=Math.max(0,state.budgetLeft/state.budgetTotal*100);
+  document.getElementById('budgetBar').style.width=pct+'%';
+}
+document.getElementById('btnUndo').addEventListener('click',undo);
+document.getElementById('btnVisit').addEventListener('click',e=>{
+  if(modeWalk){exitWalk();e.target.textContent='👤 Visitar';}
+  else{enterWalk();e.target.textContent='✖ Sair da visita';}
+});
+document.getElementById('btnView').addEventListener('click',e=>{
+  thirdPerson=!thirdPerson; e.target.textContent='Câmera: '+(thirdPerson?'3ª pessoa':'1ª pessoa');
+  if(modeWalk)document.getElementById('crosshair').style.display=thirdPerson?'none':'block';
+});
+document.getElementById('btnMute').addEventListener('click',e=>{
+  state.muted=!state.muted; e.target.textContent=state.muted?'🔇 Áudio':'🔊 Áudio';
+});
+document.getElementById('btnNext').addEventListener('click',()=>{
+  if(state.placements.length===0){ flashBudget();
+    document.getElementById('missionText').textContent='Posicione ao menos um edifício antes de prosseguir.';
+    setTimeout(()=>document.getElementById('missionText').textContent=state.mission.txt,2200); return; }
+  if(modeWalk){exitWalk();document.getElementById('btnVisit').textContent='👤 Visitar';}
+  stopSocial();
+  logEvent('budget_used',{value:state.budgetTotal-state.budgetLeft}); markStep('construir');
+  buildAttrs(); show('attrs');
+});
+
+/* ---------- ATRIBUTOS ---------- */
+function buildAttrs(){
+  const wrap=document.getElementById('attrGroups'); wrap.innerHTML='';
+  ATTR_GROUPS.forEach(g=>{
+    const div=document.createElement('div'); div.className='attr-group';
+    div.innerHTML=`<h4>${g.icon} ${g.cat}</h4>`;
+    const chips=document.createElement('div'); chips.className='chips';
+    g.items.forEach(it=>{
+      const chip=document.createElement('button'); chip.className='chip'+(state.attrs.has(it.id)?' on':'');
+      chip.innerHTML=`${it.nome} <span class="c">${it.cost}</span>`;
+      chip.onclick=()=>toggleAttr(it,chip); chips.appendChild(chip);
+    });
+    div.appendChild(chips); wrap.appendChild(div);
+  });
+  updateAttrBudget();
+}
+function toggleAttr(it,chip){
+  if(state.attrs.has(it.id)){
+    state.attrs.delete(it.id); state.budgetLeft+=it.cost; chip.classList.remove('on');
+    logEvent('item_removed',{kind:'atributo',id:it.id});
+  }else{
+    if(state.budgetLeft<it.cost){ flashAttr(); return; }
+    state.attrs.add(it.id); state.budgetLeft-=it.cost; chip.classList.add('on');
+    logEvent('item_added',{kind:'atributo',id:it.id});
+  }
+  updateAttrBudget();
+}
+function updateAttrBudget(){
+  document.getElementById('attrBudget').textContent=state.budgetLeft;
+  document.getElementById('attrBar').style.width=Math.max(0,state.budgetLeft/state.budgetTotal*100)+'%';
+}
+function flashAttr(){const el=document.getElementById('attrBudget');el.animate([{color:'#F5A623'},{color:'#ff5a5a'},{color:'#F5A623'}],{duration:400});beep(180,.1);}
+document.getElementById('attrBack').addEventListener('click',()=>show('build'));
+document.getElementById('attrNext').addEventListener('click',()=>{
+  markStep('atributos'); buildLikert(); show('likert');
+});
+
+/* ---------- IMPORTÂNCIA (LIKERT) ---------- */
+function buildLikert(){
+  const el=document.getElementById('likertRows'); el.innerHTML='';
+  const rows=[]; const seen=new Set();
+  state.placements.forEach(p=>{ if(!seen.has(p.id)){seen.add(p.id); rows.push({id:p.id,label:idLabel(p.id),cor:catColor(p.id)});} });
+  [...state.attrs].forEach(id=>{ if(!seen.has(id)){seen.add(id); rows.push({id,label:idLabel(id),cor:'#9AA5B1'});} });
+  if(!rows.length){ el.innerHTML='<p class="note">Você não posicionou itens nem priorizou atributos. Volte e construa para avaliar a importância.</p>'; return; }
+  el.innerHTML='<div class="likert-legend"><span>1 · nada importante</span><span>essencial · 5</span></div>';
+  rows.forEach(r=>{
+    const row=document.createElement('div'); row.className='likert-row';
+    const scale=[1,2,3,4,5].map(v=>`<button data-v="${v}"${state.likert[r.id]===v?' class="on"':''}>${v}</button>`).join('');
+    row.innerHTML=`<div class="lk-name"><span class="sw" style="background:${r.cor}"></span>${r.label}</div><div class="likert" data-id="${r.id}">${scale}</div>`;
+    el.appendChild(row);
+  });
+  el.querySelectorAll('.likert').forEach(lk=>{
+    lk.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      lk.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+      const v=+b.dataset.v; state.likert[lk.dataset.id]=v; tick();
+      logEvent('likert',{id:lk.dataset.id,valor:v});
+    });
+  });
+}
+document.getElementById('likertBack').addEventListener('click',()=>{ buildAttrs(); show('attrs'); });
+document.getElementById('likertNext').addEventListener('click',()=>{ markStep('importancia'); buildCompare(); show('compare'); });
+
+/* ---------- COMPARAÇÃO + VOTO ---------- */
+function scoreProject(placements,attrs){
+  // pontuação heurística 0-100 por critério
+  const nB=placements.filter(p=>p.kind==='tipologia').length;
+  const nA=placements.filter(p=>p.kind==='amenidade').length;
+  const sust=[...attrs].filter(a=>['solar','agua','ventilacao','verde','materiais','medicao','horta','praca'].includes(a)).length;
+  const usado=state.budgetTotal-state.budgetLeft;
+  return {
+    desejo: Math.min(100, 40+nB*6+nA*4+sust*3),
+    valor: Math.min(100, 35+nB*7+ (attrs.size)*2),
+    pratic: Math.min(100, 30+nA*5+[...attrs].filter(a=>['appcond','automacao','fechadura','biciclet','transporte','ev'].includes(a)).length*6),
+    sust: Math.min(100, 20+sust*11),
+    eficiencia: Math.min(100, Math.round(usado/state.budgetTotal*100)),
+  };
+}
+function buildCompare(){
+  const mine=scoreProject(state.placements,state.attrs);
+  // alternativas fictícias
+  const alts=[
+    {nome:'Alternativa A · "Padrão de mercado"', s:{desejo:58,valor:62,pratic:55,sust:34,eficiencia:80}},
+    {nome:'Alternativa B · "Verde comunitário"', s:{desejo:64,valor:57,pratic:48,sust:78,eficiencia:66}},
+  ];
+  const cardHTML=(nome,s,mm)=>{
+    const media=Math.round((s.desejo+s.valor+s.pratic+s.sust)/4);
+    const rows=[['Desejo de morar',s.desejo],['Percepção de valor',s.valor],['Praticidade',s.pratic],['Sustentabilidade',s.sust]];
+    return `<div class="card"><h3>${nome}</h3>
+      <div class="score" style="color:${mm?'var(--ambar)':'var(--texto)'}">${media}<span style="font-size:14px;color:var(--texto-sec)">/100</span></div>
+      <div class="mini">${rows.map(r=>`<div class="m"><span>${r[0]}</span><b class="mono">${r[1]}</b></div>`).join('')}</div></div>`;
+  };
+  document.getElementById('vsWrap').innerHTML =
+    cardHTML('Seu projeto',mine,true) +
+    `<div class="vsmid">VS</div>` +
+    `<div>${cardHTML(alts[0].nome,alts[0].s)}${cardHTML(alts[1].nome,alts[1].s).replace('class="card"','class="card" style="margin-top:14px"')}</div>`;
+  logEvent('comparison',{mine, alts});
+  buildVote();
+}
+function buildVote(){
+  document.getElementById('voteTarget').textContent='Alternativa B · "Verde comunitário" — quanto você recomendaria este projeto?';
+  const crit=['Desejo de morar','Percepção de valor','Praticidade','Sustentabilidade','Intenção de recomendar'];
+  const wrap=document.getElementById('voteCriteria'); wrap.innerHTML='';
+  crit.forEach(c=>{
+    const row=document.createElement('div'); row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;color:var(--texto-sec)';
+    const stars=document.createElement('div'); stars.className='stars';
+    for(let i=1;i<=5;i++){const b=document.createElement('button');b.textContent='★';b.dataset.v=i;
+      b.onclick=()=>{[...stars.children].forEach(s=>s.classList.toggle('on',+s.dataset.v<=i));
+        logEvent('vote',{criterio:c,valor:i}); beep(600,.04);};
+      stars.appendChild(b);}
+    row.innerHTML=`<span>${c}</span>`; row.appendChild(stars); wrap.appendChild(row);
+  });
+}
+document.getElementById('compareBack').addEventListener('click',()=>show('likert'));
+document.getElementById('compareNext').addEventListener('click',()=>{ markStep('comparar'); buildResult(); show('result'); });
+
+/* ---------- RESULTADO ---------- */
+function computeProfile(){
+  const scores={praticidade:0,espaco:0,sustentabilidade:0,status:0,preco:0};
+  state.placements.forEach(p=>{const def=[...TIPOLOGIAS,...AMENIDADES].find(x=>x.id===p.id); if(def)scores[def.axis]++;});
+  ATTR_GROUPS.forEach(g=>g.items.forEach(it=>{if(state.attrs.has(it.id))scores[g.axis]+=0.7;}));
+  // eficiência de orçamento reforça "preço"
+  if((state.budgetLeft/state.budgetTotal)>0.25) scores.preco+=2;
+  let best='praticidade',bv=-1; for(const k in scores)if(scores[k]>bv){bv=scores[k];best=k;}
+  return {best, scores};
+}
+function buildResult(){
+  const usado=state.budgetTotal-state.budgetLeft;
+  const sustCount=[...state.attrs].filter(a=>['solar','agua','ventilacao','verde','materiais','medicao'].includes(a)).length
+    + state.placements.filter(p=>['horta','praca'].includes(p.id)).length;
+  const sustLabel = sustCount>=5?'Alto':sustCount>=3?'Médio':sustCount>=1?'Básico':'Mínimo';
+  const prof=computeProfile();
+
+  document.getElementById('resultTitle').textContent=
+    `${state.concept.nome} · ${state.terrain.nome}`;
+  const papel = state.role ? `${state.role.emoji} ${state.avatar.name||'Você'} · ${state.role.nome}. ` : '';
+  document.getElementById('resultConcept').textContent=
+    `${papel}${state.params.towers} torre(s), ~${state.params.m2} m²/unidade · ${state.placements.filter(p=>p.kind==='tipologia').length} edifício(s), ${state.placements.filter(p=>p.kind==='amenidade').length} área(s) comum(ns) e ${state.attrs.size} atributo(s) priorizado(s).`;
+  document.getElementById('rBudget').innerHTML=`${usado} <small>/ ${state.budgetTotal}</small>`;
+  document.getElementById('rSust').textContent=sustLabel;
+  document.getElementById('rProfile').innerHTML= state.role
+    ? `${AXIS_LABEL[prof.best]}<br><span style="font-size:12px;color:var(--texto-sec)">declarado: ${state.role.nome}</span>`
+    : AXIS_LABEL[prof.best];
+
+  // barras de atributos priorizados (por eixo)
+  const axisCount={};
+  state.placements.forEach(p=>{const def=[...TIPOLOGIAS,...AMENIDADES].find(x=>x.id===p.id);if(def)axisCount[def.axis]=(axisCount[def.axis]||0)+1;});
+  ATTR_GROUPS.forEach(g=>g.items.forEach(it=>{if(state.attrs.has(it.id))axisCount[g.axis]=(axisCount[g.axis]||0)+1;}));
+  const maxA=Math.max(1,...Object.values(axisCount));
+  document.getElementById('rAttrs').innerHTML=Object.entries(AXIS_LABEL)
+    .map(([k,l])=>{const v=axisCount[k]||0;return hbar(l,v,maxA,v);}).join('');
+
+  // você x agregado (comparação de eixos)
+  const aggAxis={praticidade:63,espaco:48,sustentabilidade:57,status:39,preco:52};
+  const mineAxisPct={}; Object.keys(AXIS_LABEL).forEach(k=>mineAxisPct[k]=Math.min(100,(axisCount[k]||0)*22));
+  document.getElementById('rCompareAgg').innerHTML=Object.entries(AXIS_LABEL).map(([k,l])=>{
+    return `<div class="hbar"><span class="t">${l}</span>
+      <div class="track"><i style="width:${mineAxisPct[k]}%;background:linear-gradient(90deg,var(--ambar),var(--laranja))"></i></div>
+      <span class="p">você</span></div>
+      <div class="hbar" style="margin-top:-4px;opacity:.75"><span class="t"></span>
+      <div class="track"><i style="width:${aggAxis[k]}%"></i></div><span class="p">média</span></div>`;
+  }).join('');
+
+  // intenção
+  const ic=document.getElementById('intentChips'); ic.innerHTML='';
+  INTENTS.forEach(t=>{const b=document.createElement('button');b.className='chip';b.textContent=t.nome;
+    b.onclick=()=>{document.querySelectorAll('#intentChips .chip').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); state.intent=t.id; logEvent('declared_intent',{intent:t.id});};
+    ic.appendChild(b);});
+
+  logEvent('final_project',{
+    role: state.role?state.role.id:null,
+    terrain:state.terrain.id, concept:state.concept.id, mission:state.mission.id,
+    towers: state.params?.towers, unit_m2: state.params?.m2, plan: state.params?.typ,
+    buildings:state.placements.filter(p=>p.kind==='tipologia').map(p=>({id:p.id,area:p.size.area})),
+    amenities:state.placements.filter(p=>p.kind==='amenidade').map(p=>({id:p.id,area:p.size.area})),
+    land_allocation:state.placements.reduce((s,p)=>s+p.size.area,0),
+    attributes:[...state.attrs], importance:{...state.likert},
+    budget_used:usado, sustainability:sustLabel, profile:prof.best,
+  });
+  markStep('resultado');
+}
+function hbar(label,val,max,show){
+  return `<div class="hbar"><span class="t">${label}</span>
+    <div class="track"><i style="width:${Math.round(val/max*100)}%"></i></div>
+    <span class="p">${show}</span></div>`;
+}
+document.getElementById('btnShare').addEventListener('click',()=>{
+  const usado=state.budgetTotal-state.budgetLeft;
+  const txt=`Meu produto imobiliário — Cidade em Construção (ENEDES)
+Terreno: ${state.terrain.nome}
+Conceito: ${state.concept.nome}
+Edifícios: ${state.placements.filter(p=>p.kind==='tipologia').map(p=>`${TIPOLOGIAS.find(t=>t.id===p.id).nome} (${p.size.w}×${p.size.d})`).join(', ')||'—'}
+Áreas comuns: ${state.placements.filter(p=>p.kind==='amenidade').map(p=>`${AMENIDADES.find(t=>t.id===p.id).nome} (${p.size.w}×${p.size.d})`).join(', ')||'—'}
+Atributos: ${[...state.attrs].join(', ')||'—'}
+Orçamento usado: ${usado}/${state.budgetTotal} créditos`;
+  navigator.clipboard?.writeText(txt).then(()=>{
+    const b=document.getElementById('btnShare');const o=b.textContent;b.textContent='✓ Copiado!';setTimeout(()=>b.textContent=o,1600);
+  }).catch(()=>alert(txt));
+});
+document.getElementById('btnDashboard').addEventListener('click',()=>{renderDashboard();show('dash');});
+document.getElementById('btnRestart').addEventListener('click',restart);
+
+/* ---------- PAINEL DE INSIGHTS ---------- */
+function renderDashboard(){
+  const sessionN = state.events.some(e=>e.type==='final_project')?1:0;
+  const N=DEMO.N+sessionN;
+  document.getElementById('sampleN').textContent=N;
+
+  // mapeia o que ESTA sessão incluiu, para destacar no ranking ("você")
+  const attrToLabel={solar:'Energia solar',verde:'Áreas verdes',acesso:'Controle de acesso',
+    appcond:'App condominial',ventilacao:'Ventilação natural',biciclet:'Bicicletário',
+    automacao:'Automação residencial',ev:'Carregadores EV',compart:'Compartilhamento de veículos'};
+  const amenToLabel={piscina:'Piscina',coworking:'Coworking',rooftop:'Rooftop'};
+  const userLabels=new Set();
+  state.attrs.forEach(id=>{ if(attrToLabel[id]) userLabels.add(attrToLabel[id]); });
+  state.placements.forEach(p=>{ if(amenToLabel[p.id]) userLabels.add(amenToLabel[p.id]); });
+
+  // ranking (com marcação da sessão atual)
+  const rank=DEMO.ranking.map(([n,p])=>[n, userLabels.has(n)?Math.min(99,p+1):p, userLabels.has(n)]);
+  document.getElementById('dashRanking').innerHTML=rank.map(([n,p,mine])=>
+    `<div class="hbar"><span class="t">${mine?'★ ':''}${n}</span>
+      <div class="track"><i style="width:${p}%;${mine?'background:linear-gradient(90deg,var(--ambar),var(--laranja))':''}"></i></div>
+      <span class="p">${p}%${mine?' <span style="color:var(--ambar)">·você</span>':''}</span></div>`).join('');
+
+  // card "para a aula"
+  const usadoPct = state.budgetTotal? Math.round((state.budgetTotal-state.budgetLeft)/state.budgetTotal*100):0;
+  const nEv = state.events.length;
+  document.getElementById('dashTeaching').innerHTML=`
+    <p style="margin-bottom:8px">Use estes pontos para conduzir a discussão com a turma:</p>
+    <p style="margin-bottom:6px">• <b>Preferência revelada, não declarada.</b> No ranking, cada % é a proporção de projetos que <i>escolheram</i> o atributo sob orçamento — não o que as pessoas <i>dizem</i> valorizar. Compare com o que a turma responderia num questionário.</p>
+    <p style="margin-bottom:6px">• <b>Matriz custo × desejo.</b> O canto superior esquerdo (alto desejo, baixo custo) são ganhos rápidos de valor percebido; alto desejo + alto custo (ex.: energia solar) são diferenciais com tensão de viabilidade — decisão clássica de produto.</p>
+    <p style="margin-bottom:6px">• <b>Trade-off e tamanho.</b> Como o crédito é escasso e o tamanho do item custa área, o dado captura <i>intensidade</i> de preferência (quanto a pessoa sacrifica por uma piscina maior, por exemplo).</p>
+    <p style="margin-bottom:6px">• <b>Segmentos emergem do comportamento</b>, não da demografia — mais acionável para mix de produto e precificação.</p>
+    <p style="margin-bottom:6px">• <b>Da tela ao dataset.</b> Sua sessão gerou <b>${nEv}</b> eventos e usou <b>${usadoPct}%</b> do orçamento. Clique em <b>Baixar dados (CSV)</b> e mostre à turma que cada decisão virou uma linha de dados analisável.</p>
+    <p class="note" style="margin-top:8px">Ressalva honesta para citar em aula: crédito virtual não é dinheiro real (viés hipotético reduzido, não eliminado); os números do painel são um conjunto de exemplo — em campo, validar contra transação real (VSO/conversão).</p>`;
+
+  // matriz custo x desejo (SVG scatter)
+  const W=340,H=220,pad=28;
+  const pts=DEMO.matrix.map(([n,cx,dy])=>{
+    const x=pad+cx*(W-pad*2), y=H-pad-dy*(H-pad*2);
+    const good=cx<.45&&dy>.5;
+    return `<circle cx="${x}" cy="${y}" r="6" fill="${good?'#2F9E5B':'#2E75B6'}" opacity=".9"/>
+            <text x="${x+9}" y="${y+3}" font-size="9" fill="#9FB4C9" font-family="IBM Plex Mono">${n}</text>`;
+  }).join('');
+  document.getElementById('dashMatrix').innerHTML=
+    `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:420px">
+       <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#33506e"/>
+       <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="#33506e"/>
+       <text x="${W-pad}" y="${H-8}" font-size="9" fill="#9FB4C9" text-anchor="end" font-family="IBM Plex Mono">custo →</text>
+       <text x="6" y="${pad}" font-size="9" fill="#9FB4C9" font-family="IBM Plex Mono">desejo ↑</text>
+       ${pts}</svg>`;
+
+  // heatmap de áreas comuns
+  const heat=document.getElementById('dashHeat'); heat.innerHTML='';
+  Object.entries(DEMO.amenities).forEach(([n,v])=>{
+    const cell=document.createElement('div'); cell.className='cell';
+    const alpha=0.25+v/100*0.75;
+    cell.style.background=`rgba(47,158,91,${alpha})`;
+    cell.title=`${n}: ${v}%`; cell.textContent=v;
+    heat.appendChild(cell);
+  });
+
+  // funil
+  const fmax=DEMO.funnel[0][1];
+  document.getElementById('dashFunnel').innerHTML=DEMO.funnel.map(([l,v])=>
+    `<div class="f" style="width:${40+v/fmax*60}%"><span>${l}</span><span class="n">${v}</span></div>`).join('');
+
+  // segmentos
+  const smax=Math.max(...DEMO.segments.map(s=>s[1]));
+  document.getElementById('dashSegments').innerHTML=DEMO.segments.map(([n,v])=>
+    `<div class="hbar"><span class="t">${n}</span><div class="track"><i style="width:${v/smax*100}%;background:linear-gradient(90deg,var(--azul-medio),var(--ambar))"></i></div><span class="p">${v}</span></div>`).join('');
+
+  // insights
+  document.getElementById('dashInsights').innerHTML=DEMO.insights.map(i=>
+    `<div class="insight"><b>${i.t}</b><div style="font-size:13px;margin-top:5px;line-height:1.45;color:var(--texto)">${i.d}</div><span class="src">${i.n}</span></div>`).join('');
+}
+document.getElementById('dashBack').addEventListener('click',()=>show(state.terrain?'result':'start'));
+document.getElementById('dashRestart').addEventListener('click',restart);
+
+/* ---------- EXPORTAÇÃO DE DADOS (para demonstração em aula) ---------- */
+function downloadFile(name,text,type){
+  const blob=new Blob([text],{type});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();
+  a.remove();URL.revokeObjectURL(url);
+}
+function sessionSummary(){
+  return {
+    gerado_em:new Date().toISOString(),
+    modo: state.consent?'pesquisa':(state.demo?'demonstracao':'sem_registro'),
+    avatar: state.avatar?.name||'(anônimo)',
+    papel: state.role?.id||null,
+    terreno: state.terrain?.id||null,
+    conceito: state.concept?.id||null,
+    missao: state.mission?.id||null,
+    torres: state.params?.towers, metragem_m2: state.params?.m2, planta: state.params?.typ,
+    orcamento_total: state.budgetTotal,
+    orcamento_usado: state.budgetTotal-state.budgetLeft,
+    edificios: state.placements.filter(p=>p.kind==='tipologia').map(p=>({id:p.id,area:p.size?.area})),
+    areas_comuns: state.placements.filter(p=>p.kind==='amenidade').map(p=>({id:p.id,area:p.size?.area})),
+    atributos:[...state.attrs],
+    importancia_likert:{...state.likert},
+    intencao: state.intent,
+    total_eventos: state.events.length,
+  };
+}
+function noDataAlert(){
+  alert('Nenhum evento registrado nesta sessão.\n\nPara demonstrar em aula, volte à tela inicial e marque "Modo demonstração" (ou "Participar da pesquisa") antes de jogar — assim cada decisão é registrada.');
+}
+function exportJSON(){
+  if(!state.events.length){ noDataAlert(); return; }
+  const payload={ resumo:sessionSummary(), eventos:state.events };
+  downloadFile('sessao_cidade_em_construcao.json', JSON.stringify(payload,null,2), 'application/json');
+}
+function exportCSV(){
+  if(!state.events.length){ noDataAlert(); return; }
+  const rows=[['timestamp_iso','evento','detalhe_json']];
+  state.events.forEach(ev=>{
+    const {t,type,...rest}=ev;
+    const det=JSON.stringify(rest).replace(/"/g,'""');
+    rows.push([new Date(t).toISOString(), type, `"${det}"`]);
+  });
+  const csv=rows.map(r=>r.join(',')).join('\r\n');
+  downloadFile('sessao_cidade_em_construcao.csv', '\ufeff'+csv, 'text/csv;charset=utf-8');
+}
+document.getElementById('btnExportCSV').addEventListener('click',exportCSV);
+document.getElementById('btnExportJSON').addEventListener('click',exportJSON);
+
+/* ---------- RESTART ---------- */
+function restart(){
+  stopSocial();
+  state.terrain=null; state.concept=null; state.mission=null;
+  state.params={towers:2,m2:65,typ:'2q'}; state.likert={};
+  state.placements.forEach(p=>scene.remove(p.mesh));
+  state.placements=[]; occupied={}; state.attrs=new Set(); state.intent=null;
+  state.budgetLeft=0; state.budgetTotal=0; selectedModule=null; sizing=false; dragStart=null;
+  if(modeWalk)exitWalk();
+  const ap=document.getElementById('avatarPill'); if(ap) ap.style.display='none';
+  document.getElementById('terrainNext').disabled=true;
+  document.getElementById('conceptNext').disabled=true;
+  buildTerrainCards(); show('start');
+  logEvent('sequence',{action:'restart'});
+}
+
+/* =========================================================
+   6. BOOT
+   ========================================================= */
+try{
+  initThree();
+  document.getElementById('loading').classList.add('hidden');
+  show('start');
+  window.__cidadeReady=true;
+}catch(err){
+  console.error(err);
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('error').classList.remove('hidden');
+}
+</script>
+</body>
 </html>
