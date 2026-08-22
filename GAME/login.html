@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Entrar · Cidade em Construção | ENEDES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     CONFIGURAÇÃO DO SUPABASE · EDITE AQUI (igual ao index.html)
+     ============================================================ -->
+<script>
+  window.SUPABASE_CONFIG = {
+    url: 'https://SEU-PROJETO.supabase.co',
+    anonKey: 'SUA-ANON-KEY'
+  };
+</script>
+
+<style>
+:root{
+  --azul-profundo:#0B1E33;--superficie:#12314F;--superficie-2:#173A5E;--azul-medio:#2E75B6;
+  --verde:#1A6B3C;--verde-claro:#2F9E5B;--ambar:#FFC24B;--laranja:#F5A623;
+  --texto:#EAF1F8;--texto-sec:#9FB4C9;--borda:rgba(120,170,220,.18);--glass:rgba(14,42,71,.72);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;font-family:'Inter',system-ui,sans-serif;color:var(--texto);
+  background:radial-gradient(1200px 800px at 70% -10%, #14375c 0%, var(--azul-profundo) 55%, #071522 100%);
+  display:grid;place-items:center;padding:24px}
+.card{width:min(560px,100%);background:var(--glass);backdrop-filter:blur(14px);border:1px solid var(--borda);
+  border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.45);padding:30px;max-height:94vh;overflow:auto}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--azul-medio)}
+h1{font-family:'Space Grotesk',sans-serif;font-size:24px;margin:8px 0 4px;letter-spacing:-.01em}
+.sub{color:var(--texto-sec);font-size:14px;margin-bottom:18px;line-height:1.5}
+.tabs{display:flex;gap:8px;margin-bottom:18px}
+.tab{flex:1;padding:9px;border-radius:10px;border:1px solid var(--borda);background:transparent;color:var(--texto-sec);
+  cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px}
+.tab.on{background:var(--azul-medio);color:#fff;border-color:transparent}
+label{display:block;font-size:12.5px;color:var(--texto-sec);margin:12px 0 5px}
+input,select{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--borda);
+  background:var(--superficie);color:var(--texto);font-family:'Inter',sans-serif;font-size:14px}
+input:focus,select:focus{outline:none;border-color:var(--azul-medio)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{width:100%;margin-top:18px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;
+  border:none;border-radius:12px;padding:13px;cursor:pointer;
+  background:linear-gradient(135deg,var(--laranja),var(--ambar));color:#20140a}
+.btn.ghost{background:transparent;border:1px solid var(--borda);color:var(--texto);margin-top:10px}
+.link{background:none;border:none;color:var(--azul-medio);cursor:pointer;font-size:13px;margin-top:12px;text-decoration:underline}
+.msg{margin-top:14px;padding:11px 13px;border-radius:10px;font-size:13px;line-height:1.45;display:none}
+.msg.err{background:rgba(255,90,90,.12);border:1px solid rgba(255,90,90,.4);color:#ffb3b3;display:block}
+.msg.ok{background:rgba(47,158,91,.14);border:1px solid rgba(47,158,91,.5);color:#a7e6c1;display:block}
+.consent{display:flex;gap:10px;align-items:flex-start;background:rgba(46,117,182,.10);border:1px solid var(--borda);
+  padding:12px;border-radius:10px;margin-top:16px}
+.consent input{width:18px;height:18px;margin-top:2px;accent-color:var(--verde-claro)}
+.consent label{margin:0;font-size:12.5px;color:var(--texto-sec)}
+.note{font-size:11.5px;color:var(--texto-sec);margin-top:14px;line-height:1.5}
+.hidden{display:none}
+.logo-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--texto-sec);opacity:.6}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo" id="logo"></div>
+
+  <div id="notConfigured" class="hidden">
+    <div class="eyebrow">Configuração pendente</div>
+    <h1>Supabase não configurado</h1>
+    <p class="sub">Edite o bloco <b>SUPABASE_CONFIG</b> no topo deste arquivo (e do <b>index.html</b>) com a URL e a anon key do seu projeto, e rode o <b>schema.sql</b> no SQL Editor. Enquanto isso, o jogo funciona em modo local em <b>index.html</b>.</p>
+    <a class="btn" href="index.html" style="display:block;text-align:center;text-decoration:none">Ir para o jogo (modo local)</a>
+  </div>
+
+  <div id="authView" class="hidden">
+    <div class="eyebrow">ENEDES · Pesquisa de mercado imobiliário</div>
+    <h1>Cidade em Construção</h1>
+    <p class="sub">Entre para participar. Seus dados são tratados de forma anônima para fins de pesquisa (LGPD).</p>
+    <div class="tabs">
+      <button class="tab on" id="tabLogin">Entrar</button>
+      <button class="tab" id="tabSignup">Criar conta</button>
+    </div>
+    <label for="email">E-mail</label>
+    <input type="email" id="email" autocomplete="email" placeholder="voce@email.com" />
+    <label for="password">Senha</label>
+    <input type="password" id="password" autocomplete="current-password" placeholder="mínimo 6 caracteres" />
+    <button class="btn" id="btnAuth">Entrar</button>
+    <button class="btn ghost" id="btnGuest">Entrar como convidado (anônimo)</button>
+    <button class="link" id="btnReset">Esqueci minha senha</button>
+    <div class="msg" id="authMsg"></div>
+  </div>
+
+  <div id="profileView" class="hidden">
+    <div class="eyebrow">Etapa única · Perfil</div>
+    <h1>Antes de começar</h1>
+    <p class="sub">Poucas perguntas para contextualizar a pesquisa. Tudo é opcional e você pode marcar “prefiro não informar”.</p>
+    <div class="grid2">
+      <div><label>Faixa etária</label>
+        <select id="faixa_etaria"><option value="">—</option><option>18–24</option><option>25–34</option><option>35–44</option><option>45–59</option><option>60+</option><option>Prefiro não informar</option></select></div>
+      <div><label>Gênero</label>
+        <select id="genero"><option value="">—</option><option>Feminino</option><option>Masculino</option><option>Outro</option><option>Prefiro não informar</option></select></div>
+      <div><label>Escolaridade</label>
+        <select id="escolaridade"><option value="">—</option><option>Fundamental</option><option>Médio</option><option>Superior em curso</option><option>Superior completo</option><option>Pós-graduação</option><option>Prefiro não informar</option></select></div>
+      <div><label>Renda familiar (salários mínimos)</label>
+        <select id="renda_familiar"><option value="">—</option><option>Até 2</option><option>2 a 5</option><option>5 a 10</option><option>10 a 20</option><option>Acima de 20</option><option>Prefiro não informar</option></select></div>
+      <div><label>Composição familiar</label>
+        <select id="composicao_familiar"><option value="">—</option><option>Moro sozinho(a)</option><option>Casal sem filhos</option><option>Casal com filhos</option><option>Família monoparental</option><option>Divido com colegas</option><option>Com familiares</option><option>Prefiro não informar</option></select></div>
+      <div><label>UF</label>
+        <select id="uf"><option value="">—</option><option>DF</option><option>GO</option><option>SP</option><option>RJ</option><option>MG</option><option>Outra</option><option>Prefiro não informar</option></select></div>
+      <div><label>Situação de moradia</label>
+        <select id="situacao_moradia"><option value="">—</option><option>Alugo</option><option>Próprio quitado</option><option>Próprio financiado</option><option>Moro com familiares</option><option>Prefiro não informar</option></select></div>
+      <div><label>Finalidade principal</label>
+        <select id="finalidade"><option value="">—</option><option>Morar</option><option>Investir</option><option>Ambos</option><option>Prefiro não informar</option></select></div>
+    </div>
+    <label>Interesse em sustentabilidade</label>
+    <select id="interesse_sustentabilidade"><option value="">—</option><option>Baixo</option><option>Médio</option><option>Alto</option><option>Prefiro não informar</option></select>
+    <div class="consent">
+      <input type="checkbox" id="lgpd" />
+      <label for="lgpd">Li e concordo que meus dados sejam usados de forma <b>anônima e agregada</b> para fins de pesquisa acadêmica, conforme a LGPD. Posso solicitar a exclusão a qualquer momento.</label>
+    </div>
+    <button class="btn" id="btnProfile">Salvar e começar a jogar</button>
+    <button class="link" id="btnSkip">Pular por agora</button>
+    <div class="msg" id="profMsg"></div>
+  </div>
+
+  <p class="note" id="whoami"></p>
+</div>
+
+<script>
+  // Pré-renderização (roda sempre): garante que o formulário apareça mesmo se o módulo falhar.
+  document.getElementById('logo').innerHTML =
+    '<svg width="132" height="30" viewBox="0 0 150 34" aria-label="ENEDES"><rect x="0" y="4" width="9" height="26" rx="2" fill="#1A6B3C"/><rect x="11" y="10" width="9" height="20" rx="2" fill="#2E75B6"/><rect x="22" y="0" width="9" height="30" rx="2" fill="#E8DCC0"/><text x="40" y="20" font-family="Space Grotesk,sans-serif" font-size="17" font-weight="700" fill="#EAF1F8">ENEDES</text></svg><span class="logo-tag">logo provisória</span>';
+  document.getElementById('authView').classList.remove('hidden');
+</script>
+
+<script type="module">
+import { createClient } from './supabase.esm.js';
+const cfg = window.SUPABASE_CONFIG || {};
+const configured = cfg.url && !cfg.url.includes('SEU-PROJETO') && cfg.anonKey && !cfg.anonKey.includes('SUA-ANON');
+const supabase = configured ? createClient(cfg.url, cfg.anonKey) : null;
+
+const $ = id => document.getElementById(id);
+const show = v => { ['notConfigured','authView','profileView'].forEach(x=>$(x).classList.add('hidden')); $(v).classList.remove('hidden'); };
+const msg = (el,text,ok)=>{ el.className='msg '+(ok?'ok':'err'); el.textContent=text; };
+
+$('logo').innerHTML = `
+  <svg width="132" height="30" viewBox="0 0 150 34" aria-label="ENEDES">
+    <rect x="0" y="4" width="9" height="26" rx="2" fill="#1A6B3C"/><rect x="11" y="10" width="9" height="20" rx="2" fill="#2E75B6"/><rect x="22" y="0" width="9" height="30" rx="2" fill="#E8DCC0"/>
+    <text x="40" y="20" font-family="Space Grotesk,sans-serif" font-size="17" font-weight="700" fill="#EAF1F8">ENEDES</text>
+  </svg><span class="logo-tag">logo provisória</span>`;
+
+let mode='login';
+async function getSession(){ const { data } = await supabase.auth.getSession(); return data.session; }
+async function getProfile(uid){ const { data } = await supabase.from('perfil').select('*').eq('user_id',uid).maybeSingle(); return data; }
+
+async function route(){
+  if(!configured){
+    show('authView');
+    msg($('authMsg'), 'Prévia do login. Conecte o Supabase (edite SUPABASE_CONFIG neste arquivo e no index.html) para o login funcionar de verdade.', true);
+    return;
+  }
+  const session = await getSession();
+  if(!session){ show('authView'); return; }
+  const profile = await getProfile(session.user.id);
+  if(profile){ location.replace('index.html'); return; }
+  show('profileView');
+  $('whoami').textContent = 'Conectado como ' + (session.user.email || 'convidado anônimo');
+}
+function requireConfig(){ if(!configured){ msg($('authMsg'),'Conecte o Supabase primeiro (edite SUPABASE_CONFIG no topo do arquivo).'); return false; } return true; }
+
+$('tabLogin').onclick=()=>{ mode='login'; $('tabLogin').classList.add('on'); $('tabSignup').classList.remove('on'); $('btnAuth').textContent='Entrar'; };
+$('tabSignup').onclick=()=>{ mode='signup'; $('tabSignup').classList.add('on'); $('tabLogin').classList.remove('on'); $('btnAuth').textContent='Criar conta'; };
+
+$('btnAuth').onclick = async ()=>{
+  if(!requireConfig()) return;
+  const email=$('email').value.trim(), password=$('password').value;
+  if(!email || password.length<6){ msg($('authMsg'),'Informe e-mail válido e senha de 6+ caracteres.'); return; }
+  $('btnAuth').disabled=true;
+  try{
+    const { error } = mode==='signup'
+      ? await supabase.auth.signUp({ email, password })
+      : await supabase.auth.signInWithPassword({ email, password });
+    if(error){ msg($('authMsg'), error.message); $('btnAuth').disabled=false; return; }
+    if(mode==='signup' && !(await getSession())){ msg($('authMsg'),'Conta criada! Confirme pelo e-mail e depois entre.', true); $('btnAuth').disabled=false; return; }
+    await route();
+  }catch(e){ msg($('authMsg'),'Erro: '+e.message); }
+  $('btnAuth').disabled=false;
+};
+$('btnGuest').onclick = async ()=>{
+  if(!requireConfig()) return;
+  $('btnGuest').disabled=true;
+  try{ const { error } = await supabase.auth.signInAnonymously();
+    if(error) msg($('authMsg'),'Login anônimo indisponível (habilite em Authentication → Providers). '+error.message);
+    else await route();
+  }catch(e){ msg($('authMsg'), e.message); }
+  $('btnGuest').disabled=false;
+};
+$('btnReset').onclick = async ()=>{
+  const email=$('email').value.trim(); if(!email){ msg($('authMsg'),'Digite seu e-mail para redefinir a senha.'); return; }
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: new URL('login.html', location.href).href });
+  msg($('authMsg'), error? error.message : 'Enviamos um link de redefinição para seu e-mail.', !error);
+};
+
+async function saveProfile(withData){
+  const session = await getSession(); if(!session) return;
+  const fields = withData ? {
+    faixa_etaria:$('faixa_etaria').value, genero:$('genero').value, escolaridade:$('escolaridade').value,
+    renda_familiar:$('renda_familiar').value, composicao_familiar:$('composicao_familiar').value,
+    uf:$('uf').value, situacao_moradia:$('situacao_moradia').value, finalidade:$('finalidade').value,
+    interesse_sustentabilidade:$('interesse_sustentabilidade').value, consentimento_lgpd:$('lgpd').checked
+  } : { consentimento_lgpd:false };
+  const { error } = await supabase.from('perfil').upsert({ user_id:session.user.id, ...fields, atualizado_em:new Date().toISOString() });
+  if(error){ msg($('profMsg'),'Erro ao salvar: '+error.message); return; }
+  location.replace('index.html');
+}
+$('btnProfile').onclick=()=>{ if(!$('lgpd').checked){ msg($('profMsg'),'Marque o consentimento LGPD para salvar, ou clique em “Pular por agora”.'); return; } saveProfile(true); };
+$('btnSkip').onclick=()=> saveProfile(false);
+
+route();
+</script>
+</body>
+</html>
